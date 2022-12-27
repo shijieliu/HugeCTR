@@ -36,6 +36,35 @@
 #include "io/file_loader.hpp"
 
 namespace HugeCTR {
+/**
+ * @brief Helper class for switching rmm::resource
+ *
+ */
+class RMMContext {
+  using dmmr = rmm::mr::device_memory_resource;
+  dmmr* original_mmr_;
+  bool same_with_current_;
+
+ public:
+  RMMContext() : same_with_current_(true) {
+    original_mmr_ = rmm::mr::get_current_device_resource();
+  }
+  RMMContext(dmmr* new_mmr) : RMMContext() {
+    if (!original_mmr_->is_equal(*new_mmr)) {
+      rmm::mr::set_current_device_resource(new_mmr);
+      same_with_current_ = false;
+    }
+  }
+  ~RMMContext() noexcept(false) {
+    if (!same_with_current_) {
+      rmm::mr::set_current_device_resource(original_mmr_);
+    }
+  }
+  void set_current_device_resource(dmmr* new_mmr) const {
+    rmm::mr::set_current_device_resource(new_mmr);
+  }
+};
+
 using namespace cudf;
 namespace cudf_io = cudf::io;
 class ParquetFileSource : public Source {

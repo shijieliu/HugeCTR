@@ -19,6 +19,10 @@ import sys
 from setuptools import find_packages
 from skbuild import setup
 
+REQUIRED_PACKAGES = [
+    'horovod>=0.26.1',
+    'scikit-build >= 0.16.3',
+]
 
 def _GetSOKVersion():
     _version_path = os.path.join(
@@ -60,13 +64,19 @@ def get_cmake_args():
             if os.getenv("SOK_COMPILE_BUILD_TYPE") in ["DEBUG", "debug", "Debug"]
             else "Release"
         )
-
+    
+    enable_deeprec = "OFF"
+    if os.getenv("ENABLE_DEEPREC"):
+        enable_deeprec = (
+            "OFF" if os.getenv("ENABLE_DEEPREC") in ["0", "OFF", "Off", "off"] else "ON"
+        )
     cmake_args = [
         "-DSM='{}'".format(";".join(gpu_capabilities)),
         "-DUSE_NVTX={}".format(use_nvtx),
         "-DSOK_ASYNC={}".format(dedicated_cuda_stream),
         "-DSOK_UNIT_TEST={}".format(unit_test),
         "-DCMAKE_BUILD_TYPE={}".format(cmake_build_type),
+        "-DENABLE_DEEPREC={}".format(enable_deeprec),
     ]
     return cmake_args
 
@@ -99,6 +109,7 @@ setup(
     extras_require={"tensorflow": "tensorflow>=1.15"},
     license="Apache 2.0",
     platforms=["Linux"],
+    install_requires=REQUIRED_PACKAGES,
     python_requires=">=3",  # TODO: make it compatible with python2.7
     packages=find_packages(),
     cmake_args=get_cmake_args(),
