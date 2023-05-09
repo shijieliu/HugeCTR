@@ -112,8 +112,7 @@ void test_data_distributor(const std::vector<int>& device_list,
     table_param_list.push_back(std::move(table_param));
   }
 
-  HugeCTR::DataDistributor distributor(batch_size, ebc_param.key_type, resource_manager, core_list,
-                                       ebc_param, table_param_list);
+  HugeCTR::DataDistributor distributor(core_list, ebc_param, table_param_list);
 
   // --- allocate resulting output ---
   std::vector<DataDistributor::Result> results;

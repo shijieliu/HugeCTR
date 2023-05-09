@@ -232,7 +232,7 @@ def _LookupBackwardEmbeddingVarGPU(op, *top_grads):
         "rank",
         "num_ranks",
         "id_in_local_rank",
-        "Toffsets",
+        # "Toffsets",
         "use_sp_weight",
     ]
     kwargs = {}
@@ -242,12 +242,9 @@ def _LookupBackwardEmbeddingVarGPU(op, *top_grads):
     num_gpus = op.get_attr("num_gpus")
     num_lookups = op.get_attr("num_lookups")
     top_grads = top_grads[:num_gpus]
-    other_data = op.outputs[num_gpus : num_gpus + 2]
+    other_data = op.outputs[num_gpus : num_gpus + 3]
     hotness = op.inputs[num_lookups + 2]
-    sp_weight = op.inputs[num_lookups + 3]
-    indices, values, _ = raw_ops.lookup_backward(
-        top_grads, *other_data, hotness, sp_weight, **kwargs
-    )
+    indices, values, _ = raw_ops.lookup_backward(top_grads, *other_data, hotness, **kwargs)
     grads = []
     for i in range(len(indices)):
         handle = op.inputs[i]

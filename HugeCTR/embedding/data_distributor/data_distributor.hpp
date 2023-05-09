@@ -25,9 +25,7 @@
 #include <embedding/operators/keys_to_indices.hpp>
 #include <embedding/operators/mp_index_calculation.hpp>
 #include <embedding/operators/transpose_input.hpp>
-#include <embedding_storage/ragged_static_embedding.hpp>
 #include <optional>
-#include <resource_manager.hpp>
 #include <unordered_map>
 #include <vector>
 
@@ -37,9 +35,7 @@ class DataDistributor {
  public:
   using Result = std::vector<embedding::EmbeddingInput>;
 
-  DataDistributor(size_t batch_size, core23::DataType scalar_type,
-                  std::shared_ptr<ResourceManager> resource_manager,
-                  std::vector<std::shared_ptr<core::CoreResourceManager>>& core_resource_managers,
+  DataDistributor(std::vector<std::shared_ptr<core::CoreResourceManager>>& core_resource_managers,
                   const embedding::EmbeddingCollectionParam& ebc_param,
                   const std::vector<embedding::EmbeddingTableParam>& emb_table_param_list);
 
@@ -80,7 +76,6 @@ class DataDistributor {
   void all2all_keys_per_bucket(int mp_group_i, int gpu_id);
   void all2all_keys(int mp_group_i, int gpu_id, size_t& received_num_keys);
 
-  std::shared_ptr<ResourceManager> resource_manager_;
   std::vector<std::shared_ptr<core::CoreResourceManager>> core_resource_managers_;
   std::vector<int> feature_pooling_factors_;
   std::vector<std::vector<int>> resident_feature_tables_;  // [gpu_id][feature_id]
@@ -121,7 +116,6 @@ class DataDistributor {
   size_t batch_size_;
   size_t batch_size_per_gpu_;
   size_t sample_max_nnz_;
-  core23::DataType scalar_type_;
 
   embedding::EmbeddingCollectionParam ebc_param_;
   std::unordered_map<size_t, size_t> feature_id_to_group_id_map_;

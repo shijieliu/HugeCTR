@@ -25,20 +25,17 @@
 namespace HugeCTR {
 
 DataDistributor::DataDistributor(
-    size_t batch_size, core23::DataType scalar_type,
-    std::shared_ptr<ResourceManager> resource_manager,
     std::vector<std::shared_ptr<core::CoreResourceManager>>& core_resource_managers,
     const embedding::EmbeddingCollectionParam& ebc_param,
     const std::vector<embedding::EmbeddingTableParam>& emb_table_param_list)
-    : resource_manager_(resource_manager),
-      core_resource_managers_(core_resource_managers),
-      batch_size_(batch_size),
-      batch_size_per_gpu_(batch_size / resource_manager->get_global_gpu_count()),
-      scalar_type_(scalar_type),
+    : core_resource_managers_(core_resource_managers),
+      batch_size_(ebc_param.universal_batch_size),
+      batch_size_per_gpu_(ebc_param.universal_batch_size /
+                          core_resource_managers[0]->get_global_gpu_count()),
       ebc_param_(ebc_param),
       emb_table_param_list_(emb_table_param_list),
-      num_local_gpus_(resource_manager->get_local_gpu_count()),
-      num_global_gpus_(resource_manager->get_global_gpu_count()),
+      num_local_gpus_(core_resource_managers[0]->get_local_gpu_count()),
+      num_global_gpus_(core_resource_managers[0]->get_global_gpu_count()),
       num_features_(ebc_param.num_lookup) {
   resident_feature_tables_ = ebc_param.shard_matrix;
 
@@ -346,7 +343,7 @@ DataDistributor::KeyFilterInitParams::KeyFilterInitParams(
 }
 
 void DataDistributor::init_key_filter() {
-  size_t num_local_gpus = resource_manager_->get_local_gpu_count();
+  size_t num_local_gpus = core_resource_managers_.size();
   for (size_t local_gpu_id = 0; local_gpu_id < num_local_gpus; ++local_gpu_id) {
     std::vector<KeyFilterInitParams> init_params_for_current_gpu;
     for (size_t grouped_id = 0; grouped_id < ebc_param_.grouped_emb_params.size(); ++grouped_id) {
@@ -393,7 +390,7 @@ void DataDistributor::init_batch_major_fullbatch_input_preprocessor() {
   if (ebc_param_.input_layout_ == embedding::EmbeddingLayout::BatchMajor) {
     preprocess_inputs_.clear();
 
-    size_t num_local_gpus = resource_manager_->get_local_gpu_count();
+    size_t num_local_gpus = core_resource_managers_.size();
     for (size_t local_gpu_id = 0; local_gpu_id < num_local_gpus; ++local_gpu_id) {
       CudaDeviceContext context(core_resource_managers_[local_gpu_id]->get_device_id());
 
@@ -405,7 +402,7 @@ void DataDistributor::init_batch_major_fullbatch_input_preprocessor() {
 
 void DataDistributor::init_indices_converter() {
   if (ebc_param_.keys_preprocess_strategy_ != embedding::KeysPreprocessStrategy::AddOffset) return;
-  int num_gpus = resource_manager_->get_local_gpu_count();
+  int num_gpus = core_resource_managers_.size();
   for (int gpu_id = 0; gpu_id < num_gpus; ++gpu_id) {
     CudaDeviceContext context(core_resource_managers_[gpu_id]->get_device_id());
     int ggpu_id = core_resource_managers_[gpu_id]->get_global_gpu_id();
