@@ -769,3 +769,6 @@ See also [NCCL's known issue](https://docs.nvidia.com/deeplearning/nccl/user-gui
 + The number of data files in the file list should be no less than the number of data reader workers. Otherwise, different workers will be mapped to the same file and data loading does not progress as expected.
 
 + Joint Loss training hasn’t been supported with regularizer.
+
+
+
