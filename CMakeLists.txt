@@ -84,6 +84,13 @@ else()
   set(CUDART_LIB CUDA::cudart)
 endif()
 
+option(ENABLE_DYNAMIC_EMBEDDING_TABLE "Enable dynamic embedding table" OFF)
+if(ENABLE_DYNAMIC_EMBEDDING_TABLE)
+  set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS}    -DENABLE_DYNAMIC_EMBEDDING_TABLE")
+  set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}  -DENABLE_DYNAMIC_EMBEDDING_TABLE")
+  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -DENABLE_DYNAMIC_EMBEDDING_TABLE")
+endif()
+
 if(NOT DEFINED PYARROW_BASE_PATH)
   set(PYARROW_BASE_PATH "/usr/local/lib/python3.12/dist-packages/pyarrow")
 endif()
@@ -179,7 +186,8 @@ endif()
 
 
 foreach(arch_name ${SM})
-    if (arch_name STREQUAL 100 OR
+    if (arch_name STREQUAL 103 OR
+        arch_name STREQUAL 100 OR
         arch_name STREQUAL 90 OR
         arch_name STREQUAL 80 OR
         arch_name STREQUAL 75 OR
@@ -253,8 +261,8 @@ include_directories(
 
   # below 2 serve as a WAR to use lower version of CCCL2.5 for RMM compatibility
   # see https://github.com/rapidsai/cudf/issues/17961
-  /usr/include/libcudf/rapids/
-  /usr/include/libcudf/rapids/libcudacxx 
+  # /usr/include/libcudf/rapids/
+  # /usr/include/libcudf/rapids/libcudacxx 
   ${CUDAToolkit_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}/third_party/cuml/cpp
   ${PROJECT_SOURCE_DIR}/third_party/cuml/cpp/include

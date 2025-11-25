@@ -19,7 +19,11 @@
 
 #include <core/hctr_impl/hctr_backend.hpp>
 #include <embedding/operators/keys_to_indices.hpp>
+
+#ifdef ENABLE_DYNAMIC_EMBEDDING_TABLE
 #include <embedding_storage/dynamic_embedding.hpp>
+#endif
+
 #include <embedding_storage/dynamic_embedding_cpu.hpp>
 #include <embedding_storage/ragged_static_embedding.hpp>
 #include <random>
@@ -91,10 +95,16 @@ void test_embedding_table_optimizer(int device_id, const char table_type[],
                                                               core, table_params, ebc_param, 0,
                                                               table_params[0].opt_param);
   } else if (!strcmp(table_type, "Dynamic")) {
+#ifdef ENABLE_DYNAMIC_EMBEDDING_TABLE
     HCTR_LOG_S(INFO, WORLD) << "Creating `DynamicEmbeddingTable`..." << std::endl;
     test_table = std::make_unique<DynamicEmbeddingTable>(*resource_manager->get_local_gpu(0), core,
                                                          table_params, ebc_param, 0,
                                                          table_params[0].opt_param);
+#else
+    HCTR_OWN_THROW(HugeCTR::Error_t::UnspecificError,
+                   "Dynamic embedding table is not enabled. Please enable it by setting "
+                   "ENABLE_DYNAMIC_EMBEDDING_TABLE to ON.");
+#endif
   } else if (!strcmp(table_type, "Dynamic_CPU")) {
     HCTR_LOG_S(INFO, WORLD) << "Creating `DynamicEmbeddingTableCPU<Key>`..." << std::endl;
     test_table = std::make_unique<DynamicEmbeddingTableCPU<Key>>(table_params, ebc_param, 0,
@@ -435,7 +445,7 @@ void test_embedding_table_optimizer(int device_id, const char table_type[],
   print(diff1);
   eval(test1, ref1);
 }
-
+#ifdef ENABLE_DYNAMIC_EMBEDDING_TABLE
 TEST(dynamic_embedding_table, optimizer) {
   // Self test.
   test_embedding_table_optimizer<int64_t, uint32_t>(0, "Dynamic_CPU", HugeCTR::Optimizer_t::SGD,
@@ -454,7 +464,7 @@ TEST(dynamic_embedding_table, optimizer) {
   test_embedding_table_optimizer<int64_t, uint32_t>(0, "Dynamic", HugeCTR::Optimizer_t::Adam, 10);
   test_embedding_table_optimizer<int64_t, uint32_t>(0, "Dynamic", HugeCTR::Optimizer_t::Ftrl, 10);
 }
-
+#endif
 TEST(static_embedding_table, optimizer) {
   test_embedding_table_optimizer<int64_t, uint32_t>(0, "RaggedStatic", HugeCTR::Optimizer_t::SGD,
                                                     10);

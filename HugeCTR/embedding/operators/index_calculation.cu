@@ -355,7 +355,7 @@ __global__ void replicate_bucket_range_kernel(const offset_t *bucket_range,
         uint32_t end = static_cast<uint32_t>(bucket_range[global_id + 1]);
         smem_bucket_range[threadIdx.x] = start;
         if (threadIdx.x == max_local_id - 1) smem_bucket_range[max_local_id] = end;
-        if (global_id == max_bucket_num - 1) num_key[0] = end;
+        if (global_id == max_bucket_num - 1) num_key[0] = static_cast<uint64_t>(end);
       }
     }
     __syncthreads();

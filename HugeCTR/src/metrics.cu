@@ -15,6 +15,7 @@
  */
 
 #include <omp.h>
+#include <thrust/iterator/transform_iterator.h>
 
 #include <core23/buffer_channel_helpers.hpp>
 #include <cub/cub.cuh>
@@ -1018,10 +1019,11 @@ void AUC<T>::run_finalize_step(float* d_preds, float* d_labels, int local_id,
     float eps = 1e-7f;
     float loc_min = pred_min_ + eps;
     float loc_max = pred_max_ - eps;
-    auto clamp = [loc_min, loc_max] __device__(const float v) {
+    auto clamp = [loc_min, loc_max] __host__ __device__(const float v) {
       return fmaxf(fminf(v, loc_max), loc_min);
-    };
-    cub::TransformInputIterator<float, decltype(clamp), float*> d_clamped_preds(d_preds, clamp);
+    }; 
+    // cub::TransformInputIterator<float, decltype(clamp), float*> d_clamped_preds(d_preds, clamp);
+    thrust::transform_iterator<decltype(clamp), float*> d_clamped_preds(d_preds, clamp);
 
     // (int) casting is a CUB workaround. Fixed in https://github.com/thrust/cub/pull/38
     CUB_allocate_and_launch(st, stream_id, [&](void* workspace, size_t& size) {
@@ -1124,8 +1126,10 @@ void AUC<T>::run_finalize_step(float* d_preds, float* d_labels, int local_id,
 
       // 7. Create TPR and FPR. Need a "global" scan
       // 7.1 Local inclusive scan to find TP and FP
-      auto one_minus_val = [] __device__(const float v) { return 1.0f - v; };
-      cub::TransformInputIterator<float, decltype(one_minus_val), float*> d_one_minus_labels(
+      auto one_minus_val = [] __host__ __device__(const float v) { return 1.0f - v; };
+      // cub::TransformInputIterator<float, decltype(one_minus_val), float*> d_one_minus_labels(
+      //     fst.d_sorted_labels(), one_minus_val);
+      thrust::transform_iterator<decltype(one_minus_val), float*> d_one_minus_labels(
           fst.d_sorted_labels(), one_minus_val);
 
       CUB_allocate_and_launch(st, stream_id, [&](void* workspace, size_t& size) {
@@ -1500,11 +1504,13 @@ float NDCG<T>::finalize_metric_per_gpu(int local_id) {
   float eps = 1e-7f;
   float loc_min = pred_min_ + eps;
   float loc_max = pred_max_ - eps;
-  auto clamp = [loc_min, loc_max] __device__(const float v) {
+  auto clamp = [loc_min, loc_max] __host__ __device__(const float v) {
     return fmaxf(fminf(v, loc_max), loc_min);
   };
 
-  cub::TransformInputIterator<float, decltype(clamp), float*> d_clamped_preds(st.d_preds(), clamp);
+  // cub::TransformInputIterator<float, decltype(clamp), float*> d_clamped_preds(st.d_preds(),
+  // clamp);
+  thrust::transform_iterator<decltype(clamp), float*> d_clamped_preds(st.d_preds(), clamp);
 
   CUB_allocate_and_launch(st, [&](void* workspace, size_t& size) {
     return cub::DeviceHistogram::HistogramEven(workspace, size, d_clamped_preds, st.d_local_bins(),

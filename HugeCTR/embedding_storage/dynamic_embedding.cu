@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifdef ENABLE_DYNAMIC_EMBEDDING_TABLE
 
 #include <cuda_runtime_api.h>
 #include <curand_kernel.h>
@@ -586,3 +587,5 @@ void DynamicEmbeddingTable::evict(const core23::Tensor &keys, size_t num_keys,
 }
 
 }  // namespace embedding
+
+#endif  // ENABLE_DYNAMIC_EMBEDDING_TABLE

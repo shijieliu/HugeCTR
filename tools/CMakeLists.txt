@@ -16,5 +16,5 @@
 cmake_minimum_required(VERSION 3.20)
 if(NOT DISABLE_CUDF)
     add_subdirectory(raw_script)
-    add_subdirectory(dlrm_script)
+    # add_subdirectory(dlrm_script)
 endif()

@@ -327,8 +327,16 @@ class concurrent_unordered_map : public managed {
       {
         int dev_id = 0;
         CUDA_RT_CALL(cudaGetDevice(&dev_id));
+#if CUDA_VERSION <= 12000
         CUDA_RT_CALL(
             cudaMemPrefetchAsync(m_hashtbl_values, m_hashtbl_size * sizeof(value_type), dev_id, 0));
+#else
+        cudaMemLocation loc;
+        loc.id = dev_id;
+        loc.type = cudaMemLocationTypeDevice;
+        CUDA_RT_CALL(
+            cudaMemPrefetchAsync(m_hashtbl_values, m_hashtbl_size * sizeof(value_type), loc, 0));
+#endif
       }
     }
     // Initialize kernel, set all entry to unused <K,V>
