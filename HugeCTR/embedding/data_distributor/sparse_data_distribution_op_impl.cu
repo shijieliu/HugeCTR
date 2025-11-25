@@ -115,7 +115,7 @@ SparseMPDataDistributionOp::MPTempStorage::MPTempStorage(
     size_t temp_bytes = 0;
     DISPATCH_INTEGRAL_FUNCTION_CORE23(offset_type.type(), BucketRangeType, [&] {
       cub::DeviceScan::InclusiveSum(nullptr, temp_bytes, (BucketRangeType*)nullptr,
-                                    (BucketRangeType*)nullptr, batch_size * max_local_buckets + 1);
+                                    (BucketRangeType*)nullptr, static_cast<int64_t>(batch_size * max_local_buckets + 1));
     });
     this->temp_scan_storage = core23::Tensor(
         params.shape({static_cast<int64_t>(temp_bytes)}).data_type(core23::ScalarType::Char));

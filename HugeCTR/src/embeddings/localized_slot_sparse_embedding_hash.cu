@@ -557,8 +557,16 @@ void LocalizedSlotSparseEmbeddingHash<TypeHashKey, TypeEmbeddingComp>::load_para
                                    embedding_data_.get_local_gpu(id).get_stream()));
 
     size_t key_size_in_B = counter_per_gpu[id] * sizeof(TypeHashKey);
+#if CUDA_VERSION <= 12000
     HCTR_LIB_THROW(cudaMemPrefetchAsync(uvm_key_per_gpu[id], key_size_in_B, cudaCpuDeviceId,
                                         embedding_data_.get_local_gpu(id).get_stream()));
+#else
+    cudaMemLocation loc;
+    loc.id = cudaCpuDeviceId;
+    loc.type = cudaMemLocationTypeHost;
+    HCTR_LIB_THROW(cudaMemPrefetchAsync(uvm_key_per_gpu[id], key_size_in_B, loc, 0,
+                                        embedding_data_.get_local_gpu(id).get_stream()));
+#endif
   }
   functors_.sync_all_gpus(embedding_data_.get_resource_manager());
 
@@ -603,8 +611,16 @@ void LocalizedSlotSparseEmbeddingHash<TypeHashKey, TypeEmbeddingComp>::load_para
 
     // memcpy hash_table_key from CPU to GPU
     size_t key_size_in_B = counter * sizeof(TypeHashKey);
+#if CUDA_VERSION <= 12000
     HCTR_LIB_THROW(cudaMemPrefetchAsync(uvm_key_per_gpu[id], key_size_in_B, id,
                                         embedding_data_.get_local_gpu(id).get_stream()));
+#else
+    cudaMemLocation loc;
+    loc.id = id;
+    loc.type = cudaMemLocationTypeDevice;
+    HCTR_LIB_THROW(cudaMemPrefetchAsync(uvm_key_per_gpu[id], key_size_in_B, loc, 0,
+                                        embedding_data_.get_local_gpu(id).get_stream()));
+#endif
 
     // set hash_table_value_index on GPU
     functors_.memset_liner(d_value_index_per_gpu[id], 0ul, 1ul, counter,

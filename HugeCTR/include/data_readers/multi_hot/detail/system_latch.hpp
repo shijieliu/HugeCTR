@@ -30,7 +30,10 @@ class SystemLatch {
 
   SystemLatch(value_type expected) : expected_(expected) {
     cudaMallocManaged(&latch_, sizeof(value_type));
-    cudaMemAdvise(latch_, sizeof(value_type), cudaMemAdviseSetReadMostly, cudaCpuDeviceId);
+    cudaMemLocation loc;
+    loc.id = cudaCpuDeviceId;
+    loc.type = cudaMemLocationTypeHost;
+    cudaMemAdvise(latch_, sizeof(value_type), cudaMemAdviseSetReadMostly, loc);
     *latch_ = expected;
   }
 

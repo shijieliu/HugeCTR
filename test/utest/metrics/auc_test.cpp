@@ -354,6 +354,9 @@ TEST(auc_test, fp16_4gpu_multi) {
 TEST(auc_test, fp16_8gpu) {
   metric_test<__half>({0, 1, 2, 3, 4, 5, 6, 7}, 4321, 891573, gen_random<__half>, 1, 2);
 }
+TEST(auc_test, criteo) {
+  metric_test<__half>({0, 1, 2, 3, 4, 5, 6, 7}, 89137319, 262144, gen_random<__half>, 1, 2);
+}
 TEST(auc_test, fp16_8gpu_correct) {
   metric_test<__half>({0, 1, 2, 3, 4, 5, 6, 7}, 5423, 874345, gen_correct<__half>, 1);
 }

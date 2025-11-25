@@ -19,7 +19,9 @@
 
 #include <core/hctr_impl/hctr_backend.hpp>
 #include <embedding/operators/keys_to_indices.hpp>
+#ifdef ENABLE_DYNAMIC_EMBEDDING_TABLE
 #include <embedding_storage/dynamic_embedding.hpp>
+#endif
 #include <embedding_storage/ragged_static_embedding.hpp>
 #include <resource_managers/resource_manager_core.hpp>
 
@@ -79,9 +81,15 @@ void test_embedding_table(int device_id, int table_type) {
         new RaggedStaticEmbeddingTable(*resource_manager->get_local_gpu(0), core, table_param_list,
                                        ebc_param, 0, table_param_list[0].opt_param);
   } else {
+#ifdef ENABLE_DYNAMIC_EMBEDDING_TABLE
     embedding_table =
         new DynamicEmbeddingTable(*resource_manager->get_local_gpu(0), core, table_param_list,
                                   ebc_param, 0, table_param_list[0].opt_param);
+#else
+    HCTR_OWN_THROW(HugeCTR::Error_t::UnspecificError,
+                   "Dynamic embedding table is not enabled. Please enable it by setting "
+                   "ENABLE_DYNAMIC_EMBEDDING_TABLE to ON.");
+#endif
   }
 
   core23::Device device(core23::DeviceType::GPU, core->get_device_id());
@@ -148,8 +156,10 @@ TEST(ragged_static_embedding_table, ragged_static_embedding_table) {
   test_embedding_table<int32_t, uint32_t>(0, 0);
 }
 
+#ifdef ENABLE_DYNAMIC_EMBEDDING_TABLE
 TEST(dynamic_embedding_table, dynamic_embedding_table) {
   test_embedding_table<int32_t, size_t>(0, 1);
   test_embedding_table<int32_t, int32_t>(0, 1);
   test_embedding_table<int64_t, int32_t>(0, 1);
 }
+#endif

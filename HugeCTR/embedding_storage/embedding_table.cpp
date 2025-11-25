@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#ifdef ENABLE_DYNAMIC_EMBEDDING_TABLE
 #include <embedding_storage/dynamic_embedding.hpp>
+#endif
 #include <embedding_storage/embedding_table.hpp>
 #include <embedding_storage/ragged_static_embedding.hpp>
 
@@ -60,10 +61,18 @@ std::vector<std::unique_ptr<IGroupedEmbeddingTable>> create_grouped_embedding_ta
     HugeCTR::OptParams opt_params = get_opt_params(table_ids);
     // evsize and slot_size are stored in emb_table_param_list (EmbeddingTableParam)
     if (is_dynamic_embedding_table(table_ids)) {
+#ifdef ENABLE_DYNAMIC_EMBEDDING_TABLE
+
       // ebc_param.is_dynamic = true;
       embedding_table_list.push_back(std::make_unique<DynamicEmbeddingTable>(
           *resource_manager->get_local_gpu(local_gpu_id), core, emb_table_param_list, ebc_param,
           grouped_table_id, opt_params));
+#else
+      HCTR_OWN_THROW(HugeCTR::Error_t::UnspecificError,
+                     "Dynamic embedding table is not enabled. Please enable it by setting "
+                     "ENABLE_DYNAMIC_EMBEDDING_TABLE to ON.");
+#endif
+
     } else {
       embedding_table_list.push_back(std::make_unique<RaggedStaticEmbeddingTable>(
           *resource_manager->get_local_gpu(local_gpu_id), core, emb_table_param_list, ebc_param,

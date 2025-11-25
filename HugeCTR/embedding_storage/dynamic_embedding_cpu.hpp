@@ -16,6 +16,7 @@
 #pragma once
 
 #include <core23/logger.hpp>
+#include <embedding_storage/embedding_table.hpp>
 #include <embedding_storage/optimizers.hpp>
 #include <map>
 #include <mutex>

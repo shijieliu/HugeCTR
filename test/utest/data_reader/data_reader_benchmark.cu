@@ -46,9 +46,16 @@ __global__ void gpu_sleep(int64_t num_cycles) {
 
 int64_t get_cycles(float seconds) {
   // Get device frequency in KHz
+#if CUDA_VERSION <= 12000
   cudaDeviceProp prop;
   cudaGetDeviceProperties(&prop, 0);
   int64_t Hz = int64_t(prop.clockRate) * 1000;
+#else
+  int val{};
+  HCTR_LIB_THROW(cudaDeviceGetAttribute(&val, cudaDevAttrClockRate, 0));
+  // kHz -> Hz
+  int64_t Hz = static_cast<int64_t>(val) * 1000;
+#endif
 
   // Calculate number of cycles to wait
   int64_t num_cycles = (int64_t)(seconds * Hz);

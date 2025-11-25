@@ -454,10 +454,26 @@ class concurrent_unordered_map {
     cudaError_t status = cudaPointerGetAttributes(&hashtbl_values_ptr_attributes, m_hashtbl_values);
 
     if (cudaSuccess == status && isPtrManaged(hashtbl_values_ptr_attributes)) {
+#if CUDA_VERSION <= 12000
       CUDA_TRY(
           cudaMemPrefetchAsync(m_hashtbl_values, m_capacity * sizeof(value_type), dev_id, stream));
+#else
+      cudaMemLocation loc;
+      loc.id = dev_id;
+      loc.type = cudaMemLocationTypeDevice;
+      CUDA_TRY(
+          cudaMemPrefetchAsync(m_hashtbl_values, m_capacity * sizeof(value_type), loc, 0, stream));
+#endif
     }
+
+#if CUDA_VERSION <= 12000
     CUDA_TRY(cudaMemPrefetchAsync(this, sizeof(*this), dev_id, stream));
+#else
+    cudaMemLocation loc;
+    loc.id = dev_id;
+    loc.type = cudaMemLocationTypeDevice;
+    CUDA_TRY(cudaMemPrefetchAsync(this, sizeof(*this), loc, 0, stream));
+#endif
   }
 
   /**
@@ -522,8 +538,16 @@ class concurrent_unordered_map {
       if (cudaSuccess == status && isPtrManaged(hashtbl_values_ptr_attributes)) {
         int dev_id = 0;
         CUDA_TRY(cudaGetDevice(&dev_id));
+#if CUDA_VERSION <= 13000
         CUDA_TRY(cudaMemPrefetchAsync(m_hashtbl_values, m_capacity * sizeof(value_type), dev_id,
                                       stream));
+#else
+        cudaMemLocation loc;
+        loc.id = dev_id;
+        loc.type = cudaMemLocationTypeDevice;
+        CUDA_TRY(
+            cudaMemPrefetchAsync(m_hashtbl_values, m_capacity * sizeof(value_type), loc, stream));
+#endif
       }
     }
 

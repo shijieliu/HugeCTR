@@ -42,9 +42,18 @@ file(
     *.cu
     ../embedding_storage/*.cpp
     ../embedding_storage/*.cu
+)
+if(ENABLE_DYNAMIC_EMBEDDING_TABLE)
+  file(GLOB_RECURSE det_src
+  RELATIVE 
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ../../third_party/dynamic_embedding_table/*.cpp
     ../../third_party/dynamic_embedding_table/*.cu
-)
+  )
+  foreach(src IN LISTS det_src)
+    list(APPEND huge_ctr_src ${src})
+  endforeach()
+endif()
 
 list(REMOVE_ITEM huge_ctr_src "pybind/module_main.cpp")
 list(REMOVE_ITEM huge_ctr_src "inference_benchmark/metrics.cpp")
