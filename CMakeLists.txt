@@ -186,7 +186,8 @@ endif()
 
 
 foreach(arch_name ${SM})
-    if (arch_name STREQUAL 103 OR
+    if (arch_name STREQUAL 107 OR
+        arch_name STREQUAL 103 OR
         arch_name STREQUAL 100 OR
         arch_name STREQUAL 90 OR
         arch_name STREQUAL 80 OR
