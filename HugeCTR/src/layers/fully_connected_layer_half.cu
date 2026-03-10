@@ -73,12 +73,12 @@ FullyConnectedLayer<__half>::FullyConnectedLayer(const core23::Tensor& bottom_te
 void FullyConnectedLayer<__half>::fprop(bool is_train) {
   CudaDeviceContext context(get_device_id());
 
-  const __half* kernel = this->get_weight(0).data<__half>();
-  const __half* bias = this->get_weight(1).data<__half>();
-  const __half* bottom = get_bottom_tensor(is_train).data<__half>();
-  const __half* identity = identity_tensor_.data<__half>();
+  const __half* kernel = this->get_weight(0).template data<__half>();
+  const __half* bias = this->get_weight(1).template data<__half>();
+  const __half* bottom = get_bottom_tensor(is_train).template data<__half>();
+  const __half* identity = identity_tensor_.template data<__half>();
   auto top_tensor = this->output_tensors_[0];
-  __half* top = top_tensor.data<__half>();
+  __half* top = top_tensor.template data<__half>();
 
   const auto& bottom_tensor_dim = get_bottom_tensor(is_train).shape();
   const auto& top_tensor_dim = top_tensor.shape();
@@ -109,13 +109,13 @@ void FullyConnectedLayer<__half>::fprop(bool is_train) {
 void FullyConnectedLayer<__half>::bprop() {
   CudaDeviceContext context(get_device_id());
 
-  const __half* kernel = this->get_weight(0).data<__half>();
+  const __half* kernel = this->get_weight(0).template data<__half>();
   auto top_tensor = this->output_tensors_[0];
-  const __half* top = top_tensor.data<__half>();
-  const __half* identity = identity_tensor_.data<__half>();
-  __half* kernel_grad = this->get_wgrad(0).data<__half>();
-  __half* bias_grad = this->get_wgrad(1).data<__half>();
-  __half* bottom = get_bottom_tensor(true).data<__half>();
+  const __half* top = top_tensor.template data<__half>();
+  const __half* identity = identity_tensor_.template data<__half>();
+  __half* kernel_grad = this->get_wgrad(0).template data<__half>();
+  __half* bias_grad = this->get_wgrad(1).template data<__half>();
+  __half* bottom = get_bottom_tensor(true).template data<__half>();
 
   const auto& bottom_tensor_dim = get_bottom_tensor(true).shape();
   const auto& top_tensor_dim = top_tensor.shape();
@@ -152,7 +152,7 @@ void FullyConnectedLayer<__half>::bprop() {
 void FullyConnectedLayer<__half>::initialize() {
   CudaDeviceContext context(get_device_id());
 
-  __half* identity = identity_tensor_.data<__half>();
+  __half* identity = identity_tensor_.template data<__half>();
   const auto& bottom_tensor_dim = get_bottom_tensor(true).shape();
   int64_t m = 1;
   for (int64_t idx = 0; idx < bottom_tensor_dim.dims() - 1; idx++) {
@@ -170,13 +170,13 @@ void FullyConnectedLayer<__half>::search_algorithm() {
   const int64_t repeat_num = 100;
 
   // Device Tensors to be used
-  __half* bottom = get_bottom_tensor(true).data<__half>();
+  __half* bottom = get_bottom_tensor(true).template data<__half>();
   __half* top = this->output_tensors_[0].template data<__half>();
-  __half* identity = identity_tensor_.data<__half>();
-  __half* kernel = this->get_weight(0).data<__half>();
-  __half* bias = this->get_weight(1).data<__half>();
-  __half* kernel_grad = this->get_wgrad(0).data<__half>();
-  __half* bias_grad = this->get_wgrad(1).data<__half>();
+  __half* identity = identity_tensor_.template data<__half>();
+  __half* kernel = this->get_weight(0).template data<__half>();
+  __half* bias = this->get_weight(1).template data<__half>();
+  __half* kernel_grad = this->get_wgrad(0).template data<__half>();
+  __half* bias_grad = this->get_wgrad(1).template data<__half>();
 
   // Tensor dim
   const auto& bottom_tensor_dim = get_bottom_tensor(true).shape();

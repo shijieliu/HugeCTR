@@ -103,17 +103,19 @@ void split_3_way_feat_major(core23::Tensor label_tensor, core23::Tensor dense_te
   if (dense_is_float) {
     auto DOP = float_dense_op_t();
     split_feat_major_kernel<<<grid_dim, block_dim, 0, stream>>>(
-        label_tensor.data<float>(), label_dim, dense_tensor.data<DenseType>(), dense_dim,
-        reinterpret_cast<SparseType**>(sparse_tensors.data()), sparse_dim,
-        label_dense_sparse_tensor.data<int>(), bucket_ids.data<int>(), bucket_positions.data<int>(),
-        max_hotnesses.data<int>(), batch_size, sample_dim, DOP);
+        label_tensor.template data<float>(), label_dim, dense_tensor.template data<DenseType>(),
+        dense_dim, reinterpret_cast<SparseType**>(sparse_tensors.data()), sparse_dim,
+        label_dense_sparse_tensor.template data<int>(), bucket_ids.template data<int>(),
+        bucket_positions.template data<int>(), max_hotnesses.template data<int>(), batch_size,
+        sample_dim, DOP);
   } else {
     auto DOP = int_dense_op_t();
     split_feat_major_kernel<<<grid_dim, block_dim, 0, stream>>>(
-        label_tensor.data<float>(), label_dim, dense_tensor.data<DenseType>(), dense_dim,
-        reinterpret_cast<SparseType**>(sparse_tensors.data()), sparse_dim,
-        label_dense_sparse_tensor.data<int>(), bucket_ids.data<int>(), bucket_positions.data<int>(),
-        max_hotnesses.data<int>(), batch_size, sample_dim, DOP);
+        label_tensor.template data<float>(), label_dim, dense_tensor.template data<DenseType>(),
+        dense_dim, reinterpret_cast<SparseType**>(sparse_tensors.data()), sparse_dim,
+        label_dense_sparse_tensor.template data<int>(), bucket_ids.template data<int>(),
+        bucket_positions.template data<int>(), max_hotnesses.template data<int>(), batch_size,
+        sample_dim, DOP);
   }
 
   HCTR_LIB_THROW(cudaPeekAtLastError());

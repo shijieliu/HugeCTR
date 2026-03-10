@@ -39,17 +39,19 @@ void network_backward_from_feature_major_top_grad(const core23::Tensor& dp_num_k
   DISPATCH_INTEGRAL_FUNCTION_CORE23(dp_num_keys_per_bucket.data_type().type(), offset_t, [&] {
     DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(top_grad.data.data_type().type(), emb_t, [&] {
       DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(network_attr.type.type(), dst_emb_t, [&] {
-        const offset_t* dp_num_keys_per_bucket_ptr = dp_num_keys_per_bucket.data<offset_t>();
-        const int* network_ids_ptr = network_indices.network_ids.data<int>();
-        const int* network_gpu_ids_ptr = network_indices.network_gpu_ids.data<int>();
-        const int* network_offsets_ptr = network_indices.network_offsets.data<int>();
-        const int* network_dst_lookup_ids_ptr = network_indices.network_dst_lookup_ids.data<int>();
+        const offset_t* dp_num_keys_per_bucket_ptr =
+            dp_num_keys_per_bucket.template data<offset_t>();
+        const int* network_ids_ptr = network_indices.network_ids.template data<int>();
+        const int* network_gpu_ids_ptr = network_indices.network_gpu_ids.template data<int>();
+        const int* network_offsets_ptr = network_indices.network_offsets.template data<int>();
+        const int* network_dst_lookup_ids_ptr =
+            network_indices.network_dst_lookup_ids.template data<int>();
         int** network_ev_sizes_ptr = (int**)network_attr.id_to_ev_size.data();
         int** network_ev_offsets_ptr = (int**)network_attr.id_to_ev_start_indices.data();
-        const int* d_ev_size_offset_ptr = top_grad_attr.id_to_ev_start_indices.data<int>();
-        const emb_t* top_grad_ptr = top_grad.data.data<emb_t>();
+        const int* d_ev_size_offset_ptr = top_grad_attr.id_to_ev_start_indices.template data<int>();
+        const emb_t* top_grad_ptr = top_grad.data.template data<emb_t>();
         dst_emb_t** network_comm_buffer_ptr = (dst_emb_t**)network_buffer.data.data();
-        const char* combiner_ptr = top_grad_attr.id_to_combiner.data<char>();
+        const char* combiner_ptr = top_grad_attr.id_to_combiner.template data<char>();
         int num_network_dst_lookup_ids = network_indices.network_dst_lookup_ids.num_elements();
 
         auto one_to_multi_desc = make_MultiToOne<emb_t, dst_emb_t>(
@@ -116,17 +118,19 @@ void network_backward_from_batch_major_top_grad(const core23::Tensor& dp_num_key
   DISPATCH_INTEGRAL_FUNCTION_CORE23(dp_num_keys_per_bucket.data_type().type(), offset_t, [&] {
     DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(top_grad.data.data_type().type(), emb_t, [&] {
       DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(network_attr.type.type(), dst_emb_t, [&] {
-        const offset_t* dp_num_keys_per_bucket_ptr = dp_num_keys_per_bucket.data<offset_t>();
-        const int* network_ids_ptr = network_indices.network_ids.data<int>();
-        const int* network_gpu_ids_ptr = network_indices.network_gpu_ids.data<int>();
-        const int* network_offsets_ptr = network_indices.network_offsets.data<int>();
-        const int* network_dst_lookup_ids_ptr = network_indices.network_dst_lookup_ids.data<int>();
+        const offset_t* dp_num_keys_per_bucket_ptr =
+            dp_num_keys_per_bucket.template data<offset_t>();
+        const int* network_ids_ptr = network_indices.network_ids.template data<int>();
+        const int* network_gpu_ids_ptr = network_indices.network_gpu_ids.template data<int>();
+        const int* network_offsets_ptr = network_indices.network_offsets.template data<int>();
+        const int* network_dst_lookup_ids_ptr =
+            network_indices.network_dst_lookup_ids.template data<int>();
         int** network_ev_sizes_ptr = (int**)network_attr.id_to_ev_size.data();
         int** network_ev_offsets_ptr = (int**)network_attr.id_to_ev_start_indices.data();
-        const int* d_ev_size_offset_ptr = top_grad_attr.id_to_ev_start_indices.data<int>();
-        const emb_t* top_grad_ptr = top_grad.data.data<emb_t>();
+        const int* d_ev_size_offset_ptr = top_grad_attr.id_to_ev_start_indices.template data<int>();
+        const emb_t* top_grad_ptr = top_grad.data.template data<emb_t>();
         dst_emb_t** network_comm_buffer_ptr = (dst_emb_t**)network_buffer.data.data();
-        const char* combiner_ptr = top_grad_attr.id_to_combiner.data<char>();
+        const char* combiner_ptr = top_grad_attr.id_to_combiner.template data<char>();
         int num_network_dst_lookup_ids = network_indices.network_dst_lookup_ids.num_elements();
 
         auto one_to_multi_desc = make_MultiToOne<emb_t, dst_emb_t>(
@@ -184,7 +188,7 @@ size_t calc_num_valid_network_tensor(const EmbeddingInput& embedding_input) {
   size_t num_network_tensor = 0;
   DISPATCH_INTEGRAL_FUNCTION_CORE23(h_recv_k_per_gpu.data_type().type(), offset_t, [&] {
     for (int64_t i = 0; i < h_recv_k_per_gpu.num_elements(); ++i) {
-      num_network_tensor += static_cast<size_t>(h_recv_k_per_gpu.data<offset_t>()[i]);
+      num_network_tensor += static_cast<size_t>(h_recv_k_per_gpu.template data<offset_t>()[i]);
     }
   });
   return num_network_tensor;
@@ -278,16 +282,16 @@ void dense_network_backward_from_feature_major_top_grad(
     DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(top_grad.data.data_type().type(), src_emb_t, [&] {
       DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(
           network_buffer.data.data_type().type(), dst_emb_t, [&] {
-            const src_emb_t* top_grad_ptr = top_grad.data.data<src_emb_t>();
-            dst_emb_t* network_comm_buffer_ptr = network_buffer.data.data<dst_emb_t>();
-            offset_t* reverse_idx_ptr = reverse_idx.data<offset_t>();
-            offset_t* bucket_ids_ptr = bucket_ids.data<offset_t>();
+            const src_emb_t* top_grad_ptr = top_grad.data.template data<src_emb_t>();
+            dst_emb_t* network_comm_buffer_ptr = network_buffer.data.template data<dst_emb_t>();
+            offset_t* reverse_idx_ptr = reverse_idx.template data<offset_t>();
+            offset_t* bucket_ids_ptr = bucket_ids.template data<offset_t>();
 
             int range_num = network_indices.local_lookup_num + 1;
 
-            auto hotness_range_ptr = network_indices.d_local_hotness_range.data<int>();
-            auto ev_start_indices_ptr = network_indices.d_ev_start_indices.data<int>();
-            auto hotness_list = network_indices.d_local_hotness.data<int>();
+            auto hotness_range_ptr = network_indices.d_local_hotness_range.template data<int>();
+            auto ev_start_indices_ptr = network_indices.d_ev_start_indices.template data<int>();
+            auto hotness_list = network_indices.d_local_hotness.template data<int>();
 
             using CopyDesc =
                 DenseNetworkBackwardFeatureMajorOneToOneAtomicDesc<src_emb_t, dst_emb_t, offset_t>;
@@ -337,12 +341,12 @@ void dense_network_backward_from_batch_major_top_grad(
     DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(top_grad.data.data_type().type(), src_emb_t, [&] {
       DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(
           network_buffer.data.data_type().type(), dst_emb_t, [&] {
-            const src_emb_t* top_grad_ptr = top_grad.data.data<src_emb_t>();
-            dst_emb_t* network_comm_buffer_ptr = network_buffer.data.data<dst_emb_t>();
-            offset_t* reverse_idx_ptr = reverse_idx.data<offset_t>();
-            offset_t* bucket_ids_ptr = bucket_ids.data<offset_t>();
-            auto hotness_range_ptr = network_indices.d_local_hotness_range.data<int>();
-            auto ev_start_indices_ptr = network_indices.d_ev_start_indices.data<int>();
+            const src_emb_t* top_grad_ptr = top_grad.data.template data<src_emb_t>();
+            dst_emb_t* network_comm_buffer_ptr = network_buffer.data.template data<dst_emb_t>();
+            offset_t* reverse_idx_ptr = reverse_idx.template data<offset_t>();
+            offset_t* bucket_ids_ptr = bucket_ids.template data<offset_t>();
+            auto hotness_range_ptr = network_indices.d_local_hotness_range.template data<int>();
+            auto ev_start_indices_ptr = network_indices.d_ev_start_indices.template data<int>();
             int range_num = network_indices.local_lookup_num + 1;
             int global_ev_offset = network_indices.global_ev_offset;
             using CopyDesc =
@@ -423,16 +427,16 @@ void NetworkBackward::compute(
       DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(
           network_comm_buffer.data_type().type(), dst_emb_t, [&] {
             const offset_t** row_lengths_ptr = (const offset_t**)row_lengths.data();
-            const int* network_ids_ptr = network_ids.data<int>();
-            const int* network_gpu_ids_ptr = network_gpu_ids.data<int>();
-            const int* network_offsets_ptr = network_offsets.data<int>();
-            const int* network_dst_lookup_ids_ptr = network_dst_lookup_ids.data<int>();
+            const int* network_ids_ptr = network_ids.template data<int>();
+            const int* network_gpu_ids_ptr = network_gpu_ids.template data<int>();
+            const int* network_offsets_ptr = network_offsets.template data<int>();
+            const int* network_dst_lookup_ids_ptr = network_dst_lookup_ids.template data<int>();
             const int** network_ev_sizes_ptr = (const int**)network_ev_sizes.data();
             const int** network_ev_offsets_ptr = (const int**)network_ev_offsets.data();
-            const int* d_ev_size_offset_ptr = d_ev_size_offset.data<int>();
+            const int* d_ev_size_offset_ptr = d_ev_size_offset.template data<int>();
             const emb_t** top_grad_ptr = (const emb_t**)top_grad.data();
             dst_emb_t** network_comm_buffer_ptr = (dst_emb_t**)network_comm_buffer.data();
-            const char* combiner_ptr = d_combiner_list.data<char>();
+            const char* combiner_ptr = d_combiner_list.template data<char>();
             int num_network_dst_lookup_ids = network_dst_lookup_ids.num_elements();
             int gpu_id = core_->get_global_gpu_id();
 

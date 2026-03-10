@@ -104,12 +104,15 @@ void RaggedStaticEmbeddingTable::assign(const core23::Tensor &keys, size_t num_k
             constexpr int block_size = 256;
             int grid_size = (static_cast<int64_t>(num_keys) - 1) / block_size + 1;
             embedding_insert_kernel<<<grid_size, block_size, 0, stream>>>(
-                keys.data<key_t>(), num_keys, num_unique_key_per_table_offset.data<uint32_t>(),
-                num_table_offset, embeding_vector.data<float>(),
-                embedding_vector_offset.data<uint32_t>(), table_id_list.data<int>(),
-                table_ids_.data<int>(), table_ids_.num_elements(), keys_.data<key_t>(),
-                num_key_per_table_offset_.data<index_t>(), emb_table_.data<float>(),
-                emb_table_ev_offset_.data<uint64_t>(), local_ev_size_list_.data<int>());
+                keys.template data<key_t>(), num_keys,
+                num_unique_key_per_table_offset.template data<uint32_t>(), num_table_offset,
+                embeding_vector.template data<float>(),
+                embedding_vector_offset.template data<uint32_t>(),
+                table_id_list.template data<int>(), table_ids_.template data<int>(),
+                table_ids_.num_elements(), keys_.template data<key_t>(),
+                num_key_per_table_offset_.template data<index_t>(),
+                emb_table_.template data<float>(), emb_table_ev_offset_.template data<uint64_t>(),
+                local_ev_size_list_.template data<int>());
           }
         });
   });
@@ -207,10 +210,11 @@ void RaggedStaticEmbeddingTable::load_by_id(core23::Tensor *h_keys_tensor,
             int grid_size =
                 (static_cast<int64_t>(h_keys_tensor->num_elements()) - 1) / block_size + 1;
             embedding_insert_by_tableindex_kernel<<<grid_size, block_size>>>(
-                (key_t *)d_keys.data(), num_keys, keys_.data<key_t>(),
-                num_key_per_table_offset_.data<index_t>(), (float *)d_embedding_vector.data(),
-                emb_table_.data<float>(), table_index, max_vocabulary_size,
-                emb_table_ev_offset_.data<uint64_t>(), local_ev_size_list_.data<int>());
+                (key_t *)d_keys.data(), num_keys, keys_.template data<key_t>(),
+                num_key_per_table_offset_.template data<index_t>(),
+                (float *)d_embedding_vector.data(), emb_table_.template data<float>(), table_index,
+                max_vocabulary_size, emb_table_ev_offset_.template data<uint64_t>(),
+                local_ev_size_list_.template data<int>());
           }
         });
   });

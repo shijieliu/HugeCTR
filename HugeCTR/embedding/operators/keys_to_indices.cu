@@ -131,10 +131,11 @@ void KeysToIndicesConverter::convert(core23::Tensor& keys, size_t num_keys,
       constexpr int block_size = 256;
       int grid_size = (num_keys - 1) / block_size + 1;
       keys_to_indices_kernel<<<grid_size, block_size, 0, stream>>>(
-          keys.data<key_t>(), num_keys, num_keys_per_lookup_offset.data<offset_t>(), num_lookups,
-          table_id_list.data<int>(), local_table_ids_.data<int>(), local_table_ids_.num_elements(),
-          num_keys_per_table_offset_.data<uint64_t>(),
-          !h_num_shards_.empty() ? num_shards_.data<int>() : nullptr);
+          keys.template data<key_t>(), num_keys,
+          num_keys_per_lookup_offset.template data<offset_t>(), num_lookups,
+          table_id_list.template data<int>(), local_table_ids_.template data<int>(),
+          local_table_ids_.num_elements(), num_keys_per_table_offset_.template data<uint64_t>(),
+          !h_num_shards_.empty() ? num_shards_.template data<int>() : nullptr);
     });
   });
 }

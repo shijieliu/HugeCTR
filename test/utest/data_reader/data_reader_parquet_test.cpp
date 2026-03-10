@@ -253,17 +253,16 @@ void generate_parquet_input_files(int num_files, int sample_per_file,
   metadata << "{ \"file_stats\": [";
   for (int i = 0; i < num_files - 1; i++) {
     std::string filepath = std::to_string(i) + std::string(".parquet");
-    metadata << "{\"file_name\": \"" << filepath << "\", "
-             << "\"num_rows\":" << sample_per_file << "}, ";
+    metadata << "{\"file_name\": \"" << filepath << "\", " << "\"num_rows\":" << sample_per_file
+             << "}, ";
   }
   std::string filepath = std::to_string(num_files - 1) + std::string(".parquet");
-  metadata << "{\"file_name\": \"" << filepath << "\", "
-           << "\"num_rows\":" << sample_per_file << "} ";
+  metadata << "{\"file_name\": \"" << filepath << "\", " << "\"num_rows\":" << sample_per_file
+           << "} ";
   metadata << "], ";
   metadata << "\"labels\": [";
   for (int i = 0; i < label_dim - 1; i++) {
-    metadata << "{\"col_name\": \"label" << i << "\", "
-             << "\"index\":" << i << "}, ";
+    metadata << "{\"col_name\": \"label" << i << "\", " << "\"index\":" << i << "}, ";
   }
   metadata << "{\"col_name\": \"label" << (label_dim - 1) << "\", "
            << "\"index\":" << (label_dim - 1) << "} ";
@@ -271,8 +270,7 @@ void generate_parquet_input_files(int num_files, int sample_per_file,
 
   metadata << "\"conts\": [";
   for (int i = label_dim; i < (label_dim + dense_num - 1); i++) {
-    metadata << "{\"col_name\": \"C" << i << "\", "
-             << "\"index\":" << i << "}, ";
+    metadata << "{\"col_name\": \"C" << i << "\", " << "\"index\":" << i << "}, ";
   }
   metadata << "{\"col_name\": \"C" << (label_dim + dense_num - 1) << "\", "
            << "\"index\":" << (label_dim + dense_num - 1) << "} ";
@@ -280,8 +278,7 @@ void generate_parquet_input_files(int num_files, int sample_per_file,
 
   metadata << "\"cats\": [";
   for (int i = label_dim + dense_num; i < (label_dim + dense_num + slot_num - 1); i++) {
-    metadata << "{\"col_name\": \"C" << i << "\", "
-             << "\"index\":" << i << "}, ";
+    metadata << "{\"col_name\": \"C" << i << "\", " << "\"index\":" << i << "}, ";
   }
   metadata << "{\"col_name\": \"C" << (label_dim + dense_num + slot_num - 1) << "\", "
            << "\"index\":" << (label_dim + dense_num + slot_num - 1) << "} ";
@@ -1179,8 +1176,7 @@ void data_reader_worker_test_impl(const int num_files, const long long sample_pe
             labels[((sample_offset + sample + batch_start) * label_dim + d) %
                    (total_samples * label_dim)]) {
           HCTR_LOG_S(INFO, WORLD)
-              << "sample " << sample << " label " << d << " error "
-              << "correct vs error:"
+              << "sample " << sample << " label " << d << " error " << "correct vs error:"
               << labels[((sample_offset + sample + batch_start) * label_dim + d) %
                         (total_samples * label_dim)]
               << ":" << dense[sample * label_dense_dim + d] << std::endl;
@@ -1193,8 +1189,7 @@ void data_reader_worker_test_impl(const int num_files, const long long sample_pe
             denses[((sample_offset + sample + batch_start) * dense_dim + d) %
                    (total_samples * dense_dim)]) {
           HCTR_LOG_S(INFO, WORLD)
-              << "sample " << i << " dense " << d << " error "
-              << "correct vs error:"
+              << "sample " << i << " dense " << d << " error " << "correct vs error:"
               << denses[((sample_offset + sample + batch_start) * dense_dim + d) %
                         (total_samples * dense_dim)]
               << ":" << dense[sample * label_dense_dim + d + label_dim]

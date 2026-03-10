@@ -25,15 +25,15 @@ namespace core23 {
 
 #define DEFINE_FILL_ELSE_IF(Type, Dummy0, Dummy1)                                            \
   else if (data.data_type() == ToScalarType<Type>::value) {                                  \
-    fill_async<Type>(data.data<Type>(), data.num_elements(),                                 \
+    fill_async<Type>(data.template data<Type>(), data.num_elements(),                        \
                      TypeConverter<Type, decltype(val)>::value(val), data.device(), stream); \
   }
 
-#define DEFINE_CONVERT_ELSE_IF(DstType, SrcType, _)                                               \
-  else if (dst.data_type() == ToScalarType<DstType>::value &&                                     \
-           src.data_type() == ToScalarType<SrcType>::value) {                                     \
-    convert_async<DstType, SrcType>(dst.data<DstType>(), src.data<SrcType>(), src.num_elements(), \
-                                    dst.device(), src.device(), stream);                          \
+#define DEFINE_CONVERT_ELSE_IF(DstType, SrcType, _)                                             \
+  else if (dst.data_type() == ToScalarType<DstType>::value &&                                   \
+           src.data_type() == ToScalarType<SrcType>::value) {                                   \
+    convert_async<DstType, SrcType>(dst.template data<DstType>(), src.template data<SrcType>(), \
+                                    src.num_elements(), dst.device(), src.device(), stream);    \
   }
 
 void zeros_sync(Tensor& data) {
@@ -47,7 +47,8 @@ void zeros_async(Tensor& data, CUDAStream stream) {
   }
   ALL_DATA_CONVERSIONS_SUPPORTED(DEFINE_FILL_ELSE_IF)
   else if (data.data_type() == ToScalarType<void*>::value) {
-    fill_async<void*>(data.data<void*>(), data.num_elements(), nullptr, data.device(), stream);
+    fill_async<void*>(data.template data<void*>(), data.num_elements(), nullptr, data.device(),
+                      stream);
   }
   else {
     HCTR_THROW_IF(false, HugeCTR::Error_t::IllegalCall,
@@ -121,11 +122,11 @@ void convert_async(Tensor& dst, const Tensor& src, CUDAStream stream) {
 void uniform_async(Tensor& data, const float a, const float b, CURANDGenerator generator,
                    CUDAStream stream) {
   if (data.data_type() == ToScalarType<float>::value) {
-    uniform_async<float>(data.data<float>(), data.num_elements(), a, b, data.device(), generator,
-                         stream);
+    uniform_async<float>(data.template data<float>(), data.num_elements(), a, b, data.device(),
+                         generator, stream);
   } else if (data.data_type() == ToScalarType<double>::value) {
-    uniform_async<double>(data.data<double>(), data.num_elements(), a, b, data.device(), generator,
-                          stream);
+    uniform_async<double>(data.template data<double>(), data.num_elements(), a, b, data.device(),
+                          generator, stream);
   } else {
     HCTR_THROW_IF(false, HugeCTR::Error_t::IllegalCall,
                   data.data_type().name() + " is not supported.");
@@ -134,11 +135,11 @@ void uniform_async(Tensor& data, const float a, const float b, CURANDGenerator g
 void normal_async(Tensor& data, const float mean, const float stddev, CURANDGenerator generator,
                   CUDAStream stream) {
   if (data.data_type() == ToScalarType<float>::value) {
-    normal_async<float>(data.data<float>(), data.num_elements(), mean, stddev, data.device(),
-                        generator, stream);
+    normal_async<float>(data.template data<float>(), data.num_elements(), mean, stddev,
+                        data.device(), generator, stream);
   } else if (data.data_type() == ToScalarType<double>::value) {
-    normal_async<double>(data.data<double>(), data.num_elements(), mean, stddev, data.device(),
-                         generator, stream);
+    normal_async<double>(data.template data<double>(), data.num_elements(), mean, stddev,
+                         data.device(), generator, stream);
   } else {
     HCTR_THROW_IF(false, HugeCTR::Error_t::IllegalCall,
                   data.data_type().name() + " is not supported.");

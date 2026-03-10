@@ -113,11 +113,11 @@ void SelectLayer<T>::prop_common(bool forward, bool is_train, cudaStream_t strea
 
   int block_size = 128;
   int n_block = get_gpu().get_sm_count() * 16;
-  T* in = input_tensor.data<T>();
-  T* out = output_tensor.data<T>();
+  T* in = input_tensor.template data<T>();
+  T* out = output_tensor.template data<T>();
   select_kernel<<<n_block, block_size, 0, stream>>>(
       in, out, num_before_selected_dim_, num_in_selected_dim_, num_after_selected_dim_,
-      d_index_.data<int64_t>(), h_index_.size(), forward);
+      d_index_.template data<int64_t>(), h_index_.size(), forward);
 }
 
 template class SelectLayer<float>;

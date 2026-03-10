@@ -108,9 +108,9 @@ MatrixMultiplyLayer<T>::MatrixMultiplyLayer(const std::vector<core23::Tensor>& i
 template <typename T>
 void MatrixMultiplyLayer<T>::fprop(bool is_train) {
   CudaDeviceContext context(get_device_id());
-  T* in1 = input_tensors_[0].data<T>();
-  T* in2 = input_tensors_[1].data<T>();
-  T* out = output_tensors_[0].data<T>();
+  T* in1 = input_tensors_[0].template data<T>();
+  T* in2 = input_tensors_[1].template data<T>();
+  T* out = output_tensors_[0].template data<T>();
 
   const auto& input_tensor_shape = input_tensors_[0].shape();
   const auto& output_tensor_shape = output_tensors_[0].shape();
@@ -146,9 +146,9 @@ template <typename T>
 void MatrixMultiplyLayer<T>::bprop() {
   CudaDeviceContext context(get_device_id());
 
-  T* in1 = input_tensors_[0].data<T>();
-  T* in2 = input_tensors_[1].data<T>();
-  T* out = output_tensors_[0].data<T>();
+  T* in1 = input_tensors_[0].template data<T>();
+  T* in2 = input_tensors_[1].template data<T>();
+  T* out = output_tensors_[0].template data<T>();
 
   const auto& input_tensor_shape = input_tensors_[0].shape();
   const auto& output_tensor_shape = output_tensors_[0].shape();
@@ -175,7 +175,7 @@ void MatrixMultiplyLayer<T>::bprop() {
                                 &alpha, cur_in2, CUDA_R_32F, k, cur_out, CUDA_R_32F, k, &beta,
                                 cur_in1, CUDA_R_32F, n, compute_type, CUBLAS_GEMM_DEFAULT));
 
-    cur_in1 = fprop_inputA_tensor23_.data<T>() + i * m * n;
+    cur_in1 = fprop_inputA_tensor23_.template data<T>() + i * m * n;
     // gradient respect to B
     HCTR_LIB_THROW(cublasGemmEx(get_gpu().get_cublas_handle(), CUBLAS_OP_N, CUBLAS_OP_T, k, n, m,
                                 &alpha, cur_out, CUDA_R_32F, k, cur_in1, CUDA_R_32F, n, &beta,

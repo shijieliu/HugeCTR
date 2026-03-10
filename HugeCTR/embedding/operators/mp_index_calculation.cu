@@ -90,13 +90,14 @@ void DenseMPLocalReduceIndexCalculation::cal_for_dense_input(
   DISPATCH_INTEGRAL_FUNCTION_CORE23(key_type.type(), key_t, [&] {
     DISPATCH_INTEGRAL_FUNCTION_CORE23(offset_type.type(), offset_t, [&] {
       dense_lookup_wgrad_attr_calculation_kernel<<<grid_size, block_size, 0, stream>>>(
-          embedding_input.keys.data<key_t>(),
-          embedding_input.dense_compression_input.table_ids.data<int>(),
-          embedding_input.dense_compression_input.num_keys_per_table_offset.data<offset_t>(),
+          embedding_input.keys.template data<key_t>(),
+          embedding_input.dense_compression_input.table_ids.template data<int>(),
+          embedding_input.dense_compression_input.num_keys_per_table_offset
+              .template data<offset_t>(),
           embedding_input.dense_compression_input.num_keys_per_table_offset.num_elements(),
-          num_keys, ev_size, wgrad.unique_keys.data<key_t>(),
-          wgrad.ev_start_indices.data<uint32_t>(), wgrad.table_ids.data<int>(),
-          wgrad.num_unique_keys.data<uint64_t>());
+          num_keys, ev_size, wgrad.unique_keys.template data<key_t>(),
+          wgrad.ev_start_indices.template data<uint32_t>(), wgrad.table_ids.template data<int>(),
+          wgrad.num_unique_keys.template data<uint64_t>());
     });
   });
 }

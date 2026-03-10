@@ -172,8 +172,8 @@ class ReallocBuffer {
 
 class AUCStorage {
  public:
-  float* d_class_preds(size_t class_id) { return class_preds_[class_id].data<float>(); }
-  float* d_class_labels(size_t class_id) { return class_labels_[class_id].data<float>(); }
+  float* d_class_preds(size_t class_id) { return class_preds_[class_id].template data<float>(); }
+  float* d_class_labels(size_t class_id) { return class_labels_[class_id].template data<float>(); }
 
   float* d_lr_unsorted_preds() { return lr_unsorted_preds_.get_ptr(); }
   float* d_lr_sorted_preds() { return lr_sorted_preds_.get_ptr(); }
@@ -245,34 +245,36 @@ class AUCStorage {
 
     float* d_labels() { return labels_1_.get_ptr(); }
     float* d_preds() { return preds_1_.get_ptr(); }
-    CountType* d_local_bins() { return local_bins_.data<CountType>(); }
-    CountType* d_global_bins() { return global_bins_.data<CountType>(); }
-    CountType* d_local_bins_sum() { return local_bins_sum_.data<CountType>(); }
-    CountType* d_global_bins_sum() { return global_bins_sum_.data<CountType>(); }
-    int* d_pivots() { return pivots_.data<int>(); }
-    CountType* d_partition_offsets() { return partition_offsets_.data<CountType>(); }
+    CountType* d_local_bins() { return local_bins_.template data<CountType>(); }
+    CountType* d_global_bins() { return global_bins_.template data<CountType>(); }
+    CountType* d_local_bins_sum() { return local_bins_sum_.template data<CountType>(); }
+    CountType* d_global_bins_sum() { return global_bins_sum_.template data<CountType>(); }
+    int* d_pivots() { return pivots_.template data<int>(); }
+    CountType* d_partition_offsets() { return partition_offsets_.template data<CountType>(); }
     float* d_partitioned_preds() { return preds_2_.get_ptr(); }
     float* d_partitioned_labels() { return labels_2_.get_ptr(); }
-    CountType* d_all_partition_offsets() { return all_partition_offsets_.data<CountType>(); }
-    CountType* d_recv_offsets() { return recv_offsets_.data<CountType>(); }
+    CountType* d_all_partition_offsets() {
+      return all_partition_offsets_.template data<CountType>();
+    }
+    CountType* d_recv_offsets() { return recv_offsets_.template data<CountType>(); }
     float* d_presorted_preds() { return preds_1_.get_ptr(); }
     float* d_presorted_labels() { return labels_1_.get_ptr(); }
     float* d_sorted_preds() { return preds_2_.get_ptr(); }
     float* d_sorted_labels() { return labels_2_.get_ptr(); }
     float* d_tp() { return preds_1_.get_ptr(); }
     float* d_fp() { return labels_1_.get_ptr(); }
-    float* d_pos_per_gpu() { return pos_per_gpu_.data<float>(); }
-    float* d_neg_per_gpu() { return neg_per_gpu_.data<float>(); }
+    float* d_pos_per_gpu() { return pos_per_gpu_.template data<float>(); }
+    float* d_neg_per_gpu() { return neg_per_gpu_.template data<float>(); }
     float* d_tpr() { return preds_2_.get_ptr(); }
     float* d_fpr() { return labels_2_.get_ptr(); }
     CountType* d_identical_pred_starts() { return identical_pred_starts_.get_ptr(); }
     CountType* d_identical_pred_lengths() { return identical_pred_lengths_.get_ptr(); }
-    int* d_num_identical_segments() { return num_identical_segments_.data<int>(); }
-    float* d_halo_tpr() { return halo_tpr_.data<float>(); }
-    float* d_halo_fpr() { return halo_fpr_.data<float>(); }
-    CountType* d_tp_offsets() { return tp_offsets_.data<CountType>(); }
-    CountType* d_fp_offsets() { return fp_offsets_.data<CountType>(); }
-    float* d_auc() { return auc_.data<float>(); }
+    int* d_num_identical_segments() { return num_identical_segments_.template data<int>(); }
+    float* d_halo_tpr() { return halo_tpr_.template data<float>(); }
+    float* d_halo_fpr() { return halo_fpr_.template data<float>(); }
+    CountType* d_tp_offsets() { return tp_offsets_.template data<CountType>(); }
+    CountType* d_fp_offsets() { return fp_offsets_.template data<CountType>(); }
+    float* d_auc() { return auc_.template data<float>(); }
   };
 
   // Intermediate storage needed in finalize metric, one element per stream
@@ -370,24 +372,24 @@ class NDCGStorage {
  public:
   float* d_labels() { return labels_1_.get_ptr(); }
   float* d_preds() { return preds_1_.get_ptr(); }
-  CountType* d_local_bins() { return local_bins_.data<CountType>(); }
-  CountType* d_global_bins() { return global_bins_.data<CountType>(); }
-  CountType* d_local_bins_sum() { return local_bins_sum_.data<CountType>(); }
-  CountType* d_global_bins_sum() { return global_bins_sum_.data<CountType>(); }
-  int* d_pivots() { return pivots_.data<int>(); }
-  CountType* d_partition_offsets() { return partition_offsets_.data<CountType>(); }
+  CountType* d_local_bins() { return local_bins_.template data<CountType>(); }
+  CountType* d_global_bins() { return global_bins_.template data<CountType>(); }
+  CountType* d_local_bins_sum() { return local_bins_sum_.template data<CountType>(); }
+  CountType* d_global_bins_sum() { return global_bins_sum_.template data<CountType>(); }
+  int* d_pivots() { return pivots_.template data<int>(); }
+  CountType* d_partition_offsets() { return partition_offsets_.template data<CountType>(); }
   float* d_partitioned_preds() { return preds_2_.get_ptr(); }
   float* d_partitioned_labels() { return labels_2_.get_ptr(); }
-  CountType* d_all_partition_offsets() { return all_partition_offsets_.data<CountType>(); }
-  CountType* d_recv_offsets() { return recv_offsets_.data<CountType>(); }
+  CountType* d_all_partition_offsets() { return all_partition_offsets_.template data<CountType>(); }
+  CountType* d_recv_offsets() { return recv_offsets_.template data<CountType>(); }
   float* d_presorted_preds() { return preds_1_.get_ptr(); }
   float* d_presorted_labels() { return labels_1_.get_ptr(); }
   float* d_sorted_preds() { return preds_2_.get_ptr(); }
   float* d_sorted_labels() { return labels_2_.get_ptr(); }
   float* d_scaled_labels() { return scaled_labels_.get_ptr(); }
-  float* d_dcg() { return dcg_.data<float>(); }
-  CountType* d_label_count() { return label_count_.data<CountType>(); }
-  float* d_ideal_dcg() { return ideal_dcg_.data<float>(); }
+  float* d_dcg() { return dcg_.template data<float>(); }
+  CountType* d_label_count() { return label_count_.template data<CountType>(); }
+  float* d_ideal_dcg() { return ideal_dcg_.template data<float>(); }
 
   size_t num_redistributed_samples;
   std::vector<size_t> all_num_redistributed_samples;

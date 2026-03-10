@@ -619,22 +619,20 @@ void data_generation_for_parquet(std::string file_list_name, std::string data_pr
              << "\"num_rows\":" << num_records_per_file << "}, ";
   }
   std::string filepath = data_prefix + std::to_string(num_files - 1) + std::string(".parquet");
-  metadata << "{\"file_name\": \"" << filepath << "\", "
-           << "\"num_rows\":" << num_records_per_file << "} ";
+  metadata << "{\"file_name\": \"" << filepath << "\", " << "\"num_rows\":" << num_records_per_file
+           << "} ";
   metadata << "], ";
   metadata << "\"labels\": [";
   for (int i = 0; i < label_dim - 1; i++) {
-    metadata << "{\"col_name\": \"label" << i << "\", "
-             << "\"index\":" << i << "}, ";
+    metadata << "{\"col_name\": \"label" << i << "\", " << "\"index\":" << i << "}, ";
   }
-  metadata << "{\"col_name\": \"label" << label_dim - 1 << "\", "
-           << "\"index\":" << label_dim - 1 << "} ";
+  metadata << "{\"col_name\": \"label" << label_dim - 1 << "\", " << "\"index\":" << label_dim - 1
+           << "} ";
   metadata << "], ";
 
   metadata << "\"conts\": [";
   for (int i = label_dim; i < (label_dim + dense_dim - 1); i++) {
-    metadata << "{\"col_name\": \"C" << i << "\", "
-             << "\"index\":" << i << "}, ";
+    metadata << "{\"col_name\": \"C" << i << "\", " << "\"index\":" << i << "}, ";
   }
   if (dense_dim > 0) {
     metadata << "{\"col_name\": \"C" << (label_dim + dense_dim - 1) << "\", "
@@ -645,8 +643,7 @@ void data_generation_for_parquet(std::string file_list_name, std::string data_pr
 
   metadata << "\"cats\": [";
   for (int i = label_dim + dense_dim; i < (label_dim + dense_dim + slot_num - 1); i++) {
-    metadata << "{\"col_name\": \"C" << i << "\", "
-             << "\"index\":" << i << "}, ";
+    metadata << "{\"col_name\": \"C" << i << "\", " << "\"index\":" << i << "}, ";
   }
   metadata << "{\"col_name\": \"C" << (label_dim + dense_dim + slot_num - 1) << "\", "
            << "\"index\":" << (label_dim + dense_dim + slot_num - 1) << "} ";
@@ -741,22 +738,20 @@ void data_generation_for_parquet(
              << "\"num_rows\":" << num_records_per_file << "}, ";
   }
   std::string filepath = data_prefix + std::to_string(num_files - 1) + std::string(".parquet");
-  metadata << "{\"file_name\": \"" << filepath << "\", "
-           << "\"num_rows\":" << num_records_per_file << "} ";
+  metadata << "{\"file_name\": \"" << filepath << "\", " << "\"num_rows\":" << num_records_per_file
+           << "} ";
   metadata << "], ";
   metadata << "\"labels\": [";
   for (int i = 0; i < label_dim - 1; i++) {
-    metadata << "{\"col_name\": \"label" << i << "\", "
-             << "\"index\":" << i << "}, ";
+    metadata << "{\"col_name\": \"label" << i << "\", " << "\"index\":" << i << "}, ";
   }
-  metadata << "{\"col_name\": \"label" << label_dim - 1 << "\", "
-           << "\"index\":" << label_dim - 1 << "} ";
+  metadata << "{\"col_name\": \"label" << label_dim - 1 << "\", " << "\"index\":" << label_dim - 1
+           << "} ";
   metadata << "], ";
 
   metadata << "\"conts\": [";
   for (int i = label_dim; i < (label_dim + dense_dim - 1); i++) {
-    metadata << "{\"col_name\": \"C" << i << "\", "
-             << "\"index\":" << i << "}, ";
+    metadata << "{\"col_name\": \"C" << i << "\", " << "\"index\":" << i << "}, ";
   }
   if (dense_dim > 0) {
     metadata << "{\"col_name\": \"C" << (label_dim + dense_dim - 1) << "\", "
@@ -767,8 +762,7 @@ void data_generation_for_parquet(
 
   metadata << "\"cats\": [";
   for (int i = label_dim + dense_dim; i < (label_dim + dense_dim + slot_num - 1); i++) {
-    metadata << "{\"col_name\": \"C" << i << "\", "
-             << "\"index\":" << i << "}, ";
+    metadata << "{\"col_name\": \"C" << i << "\", " << "\"index\":" << i << "}, ";
   }
   metadata << "{\"col_name\": \"C" << (label_dim + dense_dim + slot_num - 1) << "\", "
            << "\"index\":" << (label_dim + dense_dim + slot_num - 1) << "} ";

@@ -105,14 +105,14 @@ void weight_multiply_test(int64_t batch_size, int64_t slot_num, int64_t embeddin
   core23::TensorContainer<__half, 1, 1> weights_grad_container(
       std::move(weights_grad), {static_cast<int64_t>(weights_grad.size())});
 
-  T* d_weight = weights_container[0].data<T>();
-  T* d_wgrad = weights_grad_container[0].data<T>();
+  T* d_weight = weights_container[0].template data<T>();
+  T* d_wgrad = weights_grad_container[0].template data<T>();
 
   const int64_t len_in = batch_size * slot_num;
   const int64_t len_out = batch_size * slot_num * embedding_vec_size;
   const int64_t len_w = slot_num * embedding_vec_size;
-  T* d_in = in_tensor.data<T>();
-  T* d_out = out_tensor.data<T>();
+  T* d_in = in_tensor.template data<T>();
+  T* d_out = out_tensor.template data<T>();
   std::unique_ptr<T[]> h_in(new T[len_in]);
   std::unique_ptr<T[]> h_out(new T[len_out]);
   std::unique_ptr<T[]> h_weight(new T[len_w]);

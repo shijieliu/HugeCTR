@@ -283,8 +283,7 @@ class CudaCPUDeviceContext {
             handle, cpu_mask->size / (sizeof(unsigned long) * 8), cpu_mask->maskp));
         int node = select_node(cpu_mask);
         device_id_to_numa_node_[device_id] = node;
-        HCTR_LOG_S(INFO, ROOT) << "  GPU " << device_id << " -> "
-                               << " node " << node << std::endl;
+        HCTR_LOG_S(INFO, ROOT) << "  GPU " << device_id << " -> " << " node " << node << std::endl;
 
         if (numa_node_to_device_ids_.count(node) == 0) {
           numa_node_to_device_ids_[node] = std::vector<int>{device_id};

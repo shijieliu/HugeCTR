@@ -96,7 +96,7 @@ struct ShardPartitioner {
   using view_type = ShardPartitionerView;
 
   view_type view() const noexcept {
-    return view_type{gpu_ids.data<int>(), num_shard_range.data<int>()};
+    return view_type{gpu_ids.template data<int>(), num_shard_range.template data<int>()};
   }
 };
 
@@ -119,7 +119,9 @@ struct TablePartitioner {
                    const embedding::WgradAttr &wgrad_attr);
   using view_type = TablePartitionerView;
 
-  view_type view() const noexcept { return view_type{lookup_id_to_local_table_id.data<int>()}; }
+  view_type view() const noexcept {
+    return view_type{lookup_id_to_local_table_id.template data<int>()};
+  }
 };
 
 struct IdentityPartitionerView {

@@ -87,9 +87,9 @@ void Loss<T>::compute(bool is_train, long long current_batchsize, float rterm) {
   int batch_size = input_dim.size(0);
   int feature_dim = input_dim.size(1);
 
-  T *input = input_tensor.data<T>();
-  const float *label = label_tensor.data<float>();
-  float *loss = loss_tensor.data<float>();
+  T *input = input_tensor.template data<T>();
+  const float *label = label_tensor.template data<float>();
+  float *loss = loss_tensor.template data<float>();
 
   if (current_batchsize > batch_size && current_batchsize < 0) {
     HCTR_OWN_THROW(Error_t::WrongInput, "current_batchsize > batch_size && current_batchsize < 0");
@@ -350,7 +350,7 @@ void MultiCrossEntropyLoss<T>::do_compute(T *input, const float *label, float *l
   const int GRID_SIZE = min(40, (batch_size * labels_per_sample + BLOCK_SIZE - 1) / BLOCK_SIZE);
   float *target_weight = nullptr;
 
-  target_weight = target_weight_.data<float>();
+  target_weight = target_weight_.template data<float>();
   MultiCrossEntropy_Kernel<<<GRID_SIZE, BLOCK_SIZE, 0, stream>>>(
       input, label, target_weight, loss, batch_size, Loss<T>::get_total_gpu_count(),
       labels_per_sample, scaler, rterm, is_train);

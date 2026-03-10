@@ -121,8 +121,8 @@ void GaussianDataSimulator::fill(Tensor2<float>& tensor, const curandGenerator_t
 template <>
 void UniformGenerator::fill<float>(core23::Tensor& tensor, float a, float b, size_t sm_count,
                                    const curandGenerator_t& generator, const cudaStream_t& stream) {
-  UniformGenerator::fill<float>(tensor.data<float>(), tensor.num_elements(), a, b, sm_count,
-                                generator, stream);
+  UniformGenerator::fill<float>(tensor.template data<float>(), tensor.num_elements(), a, b,
+                                sm_count, generator, stream);
 }
 
 template <>
@@ -133,17 +133,17 @@ void HostUniformGenerator::fill<float>(core23::Tensor& tensor, float a, float b,
   }
   int64_t num_elements = tensor.num_elements();
   int64_t even_length = tensor.num_elements() / 2 * 2;
-  float* p = tensor.data<float>();
+  float* p = tensor.template data<float>();
   float tmp[2];
   // in case the length is odd
   if (num_elements & 1) {
-    float* last_element_ptr = tensor.data<float>() + even_length;
+    float* last_element_ptr = tensor.template data<float>() + even_length;
     HCTR_LIB_THROW(curandGenerateUniform(generator, tmp, 2));
     tmp[0] = tmp[0] * (b - a) + a;
     *last_element_ptr = tmp[0];
   }
   // even_length=0 is allowed
-  HCTR_LIB_THROW(curandGenerateUniform(generator, tensor.data<float>(), even_length));
+  HCTR_LIB_THROW(curandGenerateUniform(generator, tensor.template data<float>(), even_length));
   for (int64_t i = 0; i < tensor.num_elements(); i++) {
     p[i] = p[i] * (b - a) + a;
   }
@@ -152,8 +152,8 @@ void HostUniformGenerator::fill<float>(core23::Tensor& tensor, float a, float b,
 template <>
 void NormalGenerator::fill<float>(core23::Tensor& tensor, float mean, float stddev, size_t sm_count,
                                   const curandGenerator_t& generator, const cudaStream_t& stream) {
-  HCTR_LIB_THROW(
-      curandGenerateNormal(generator, tensor.data<float>(), tensor.num_elements(), mean, stddev));
+  HCTR_LIB_THROW(curandGenerateNormal(generator, tensor.template data<float>(),
+                                      tensor.num_elements(), mean, stddev));
 }
 
 template <>
@@ -161,7 +161,7 @@ void HostNormalGenerator::fill<float>(core23::Tensor& tensor, float mean, float 
                                       const curandGenerator_t& gen) {
   int64_t num_elements = tensor.num_elements();
   int64_t even_length = tensor.num_elements() / 2 * 2;
-  float* p = tensor.data<float>();
+  float* p = tensor.template data<float>();
   float tmp[2];
   if (num_elements & 1) {
     float* last_element_ptr = p + even_length;
@@ -173,7 +173,7 @@ void HostNormalGenerator::fill<float>(core23::Tensor& tensor, float mean, float 
 }
 
 void ConstantDataSimulator::fill(core23::Tensor& tensor, const curandGenerator_t& gen) {
-  float* p = tensor.data<float>();
+  float* p = tensor.template data<float>();
   for (int64_t i = 0; i < tensor.num_elements(); i++) {
     p[i] = value_;
   }

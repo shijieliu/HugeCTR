@@ -99,8 +99,8 @@ void EluLayer<T>::fprop(bool is_train) {
   T alpha = alpha_;
   auto fop = [alpha] __device__(T in) { return (in < 0) ? alpha * (expf(in) - 1) : in; };
 
-  MLCommon::LinAlg::unaryOp(output_tensor.data<T>(), input_tensor.data<T>(), len, fop,
-                            get_gpu().get_stream());
+  MLCommon::LinAlg::unaryOp(output_tensor.template data<T>(), input_tensor.template data<T>(), len,
+                            fop, get_gpu().get_stream());
 }
 
 template <>
@@ -116,7 +116,7 @@ void EluLayer<__half>::fprop(bool is_train) {
   dim3 block_size(256, 1, 1);
   dim3 grid_size((len / 2 + block_size.x - 1) / block_size.x, 1, 1);
   elu_kernel<<<grid_size, block_size, 0, get_gpu().get_stream()>>>(
-      input_tensor.data<__half>(), output_tensor.data<__half>(), len, alpha);
+      input_tensor.template data<__half>(), output_tensor.template data<__half>(), len, alpha);
 }
 
 template <typename T>
@@ -133,8 +133,8 @@ void EluLayer<T>::bprop() {
     return (d_in < 0) ? alpha * expf(d_in) * d_out : d_out;
   };
 
-  MLCommon::LinAlg::binaryOp(input_tensor.data<T>(), output_tensor.data<T>(),
-                             input_tensor.data<T>(), len, bop, get_gpu().get_stream());
+  MLCommon::LinAlg::binaryOp(input_tensor.template data<T>(), output_tensor.template data<T>(),
+                             input_tensor.template data<T>(), len, bop, get_gpu().get_stream());
 }
 
 template <>
@@ -150,7 +150,7 @@ void EluLayer<__half>::bprop() {
   dim3 block_size(256, 1, 1);
   dim3 grid_size((len / 2 + block_size.x - 1) / block_size.x, 1, 1);
   elu_dgrad_kernel<<<grid_size, block_size, 0, get_gpu().get_stream()>>>(
-      output_tensor.data<__half>(), input_tensor.data<__half>(), len, alpha);
+      output_tensor.template data<__half>(), input_tensor.template data<__half>(), len, alpha);
 }
 
 template class EluLayer<float>;

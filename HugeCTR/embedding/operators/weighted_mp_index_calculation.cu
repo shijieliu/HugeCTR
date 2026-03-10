@@ -332,7 +332,7 @@ void WeightedModelIndexCalculation::compute(
   core23::TensorParams params = core23::TensorParams();
 
   HCTR_CHECK(bucket_range.data_type() == model_idx_offsets_.data_type());
-  *(num_model_key_.data<uint64_t>()) = 0;
+  *(num_model_key_.template data<uint64_t>()) = 0;
   if (num_local_embedding_ > 0) {
     DISPATCH_INTEGRAL_FUNCTION_CORE23(key.data_type().type(), key_t, [&] {
       DISPATCH_INTEGRAL_FUNCTION_CORE23(bucket_range.data_type().type(), offset_t, [&] {
@@ -343,15 +343,15 @@ void WeightedModelIndexCalculation::compute(
             cudaMemsetAsync(model_idx_offsets_.data(), 0, model_idx_offsets_.num_bytes(), stream));
         HCTR_LIB_THROW(cudaMemsetAsync(flag_.data(), 0, flag_.num_bytes(), stream));
 
-        key_t* model_key_ptr = model_key_.data<key_t>();
-        offset_t* model_idx_offsets_ptr = model_idx_offsets_.data<offset_t>();
-        uint64_t* num_model_key_ptr = num_model_key_.data<uint64_t>();
-        char* flag_ptr = flag_.data<char>();
-        const key_t* key_ptr = key.data<key_t>();
-        const offset_t* bucket_range_ptr = bucket_range.data<offset_t>();
-        const int* local_embedding_list_ptr = d_local_embedding_list.data<int>();
-        const int* local_shard_id_ptr = d_local_shard_id_list.data<int>();
-        const int* local_num_shards_ptr = d_local_num_shards_list.data<int>();
+        key_t* model_key_ptr = model_key_.template data<key_t>();
+        offset_t* model_idx_offsets_ptr = model_idx_offsets_.template data<offset_t>();
+        uint64_t* num_model_key_ptr = num_model_key_.template data<uint64_t>();
+        char* flag_ptr = flag_.template data<char>();
+        const key_t* key_ptr = key.template data<key_t>();
+        const offset_t* bucket_range_ptr = bucket_range.template data<offset_t>();
+        const int* local_embedding_list_ptr = d_local_embedding_list.template data<int>();
+        const int* local_shard_id_ptr = d_local_shard_id_list.template data<int>();
+        const int* local_num_shards_ptr = d_local_num_shards_list.template data<int>();
 
         // in cub implementation, the flag must be 0 or 1. See
         // https://github.com/NVIDIA/cub/issues/235 we can fuse this memset with next kernel
@@ -372,8 +372,8 @@ void WeightedModelIndexCalculation::compute(
                                    key_ptr, flag_ptr, model_key_ptr, num_model_key_ptr, num_key,
                                    stream);
         DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(reorder_sp_weight.data_type().type(), dtype_t, [&] {
-          const dtype_t* reorder_sp_weight_ptr = reorder_sp_weight.data<dtype_t>();
-          dtype_t* model_sp_weight_ptr = model_sp_weight_.data<dtype_t>();
+          const dtype_t* reorder_sp_weight_ptr = reorder_sp_weight.template data<dtype_t>();
+          dtype_t* model_sp_weight_ptr = model_sp_weight_.template data<dtype_t>();
           size_t d_temp_select_weight_storage_nbytes = d_temp_select_weight_storage_.num_bytes();
 
           cub::DeviceSelect::Flagged(d_temp_select_weight_storage_.data(),
@@ -390,7 +390,7 @@ void WeightedModelIndexCalculation::compute(
   model_key = core23::Tensor(model_key_);
   model_idx_offsets = core23::Tensor(model_idx_offsets_);
 
-  *num_model_key = *(num_model_key_.data<uint64_t>());
+  *num_model_key = *(num_model_key_.template data<uint64_t>());
 }
 
 WeightedModelBackwardIndexCalculation::WeightedModelBackwardIndexCalculation(
@@ -571,24 +571,24 @@ void WeightedModelBackwardIndexCalculation::compute(
     DISPATCH_INTEGRAL_FUNCTION_CORE23(model_offset.data_type().type(), offset_t, [&] {
       auto stream = core_->get_local_gpu()->get_stream();
 
-      HCTR_LIB_THROW(cudaMemsetAsync(bucket_id_list_.data<uint32_t>(), 0,
+      HCTR_LIB_THROW(cudaMemsetAsync(bucket_id_list_.template data<uint32_t>(), 0,
                                      bucket_id_list_.num_bytes(), stream));
-      HCTR_LIB_THROW(cudaMemsetAsync(sorted_local_index_.data<uint32_t>(), 0,
+      HCTR_LIB_THROW(cudaMemsetAsync(sorted_local_index_.template data<uint32_t>(), 0,
                                      sorted_local_index_.num_bytes(), stream));
-      HCTR_LIB_THROW(cudaMemsetAsync(unique_local_index_.data<uint32_t>(), 0,
+      HCTR_LIB_THROW(cudaMemsetAsync(unique_local_index_.template data<uint32_t>(), 0,
                                      unique_local_index_.num_bytes(), stream));
       HCTR_LIB_THROW(
-          cudaMemsetAsync(unique_key_.data<key_t>(), 0, unique_key_.num_bytes(), stream));
-      HCTR_LIB_THROW(cudaMemsetAsync(unique_dst_idx_.data<uint32_t>(), 0,
+          cudaMemsetAsync(unique_key_.template data<key_t>(), 0, unique_key_.num_bytes(), stream));
+      HCTR_LIB_THROW(cudaMemsetAsync(unique_dst_idx_.template data<uint32_t>(), 0,
                                      unique_dst_idx_.num_bytes(), stream));
-      HCTR_LIB_THROW(cudaMemsetAsync(coordinate_wgrad_dst_idx_.data<uint32_t>(), 0,
+      HCTR_LIB_THROW(cudaMemsetAsync(coordinate_wgrad_dst_idx_.template data<uint32_t>(), 0,
                                      coordinate_wgrad_dst_idx_.num_bytes(), stream));
-      HCTR_LIB_THROW(cudaMemsetAsync(sorted_bucket_id_list_.data<uint32_t>(), 0,
+      HCTR_LIB_THROW(cudaMemsetAsync(sorted_bucket_id_list_.template data<uint32_t>(), 0,
                                      sorted_bucket_id_list_.num_bytes(), stream));
-      HCTR_LIB_THROW(cudaMemsetAsync(sorted_bucket_id_offset_.data<uint32_t>(), 0,
+      HCTR_LIB_THROW(cudaMemsetAsync(sorted_bucket_id_offset_.template data<uint32_t>(), 0,
                                      sorted_bucket_id_offset_.num_bytes(), stream));
       // TODO:: need to fix  a flexsible type
-      HCTR_LIB_THROW(cudaMemsetAsync(sorted_sp_weight_list_.data<float>(), 0,
+      HCTR_LIB_THROW(cudaMemsetAsync(sorted_sp_weight_list_.template data<float>(), 0,
                                      sorted_sp_weight_list_.num_bytes(), stream));
 
       if (num_local_embedding_ > 0 && num_model_key > 0ul) {
@@ -597,48 +597,54 @@ void WeightedModelBackwardIndexCalculation::compute(
           int block_size = 256;
           int grid_size = (batch_size * num_local_embedding_ - 1) / block_size + 1;
           expand_bucket_id_kernel<<<grid_size, block_size, 0, stream>>>(
-              model_offset.data<offset_t>(), bucket_id_list_.data<uint32_t>(), batch_size,
-              num_local_embedding_, batch_size_per_gpu);
+              model_offset.template data<offset_t>(), bucket_id_list_.template data<uint32_t>(),
+              batch_size, num_local_embedding_, batch_size_per_gpu);
         }
         {
           int num_hash_key = hash_keys_.num_elements();
           constexpr int block_size = 256;
           int grid_size = (num_hash_key - 1) / block_size + 1;
-          initialize_hash_key<<<grid_size, block_size, 0, stream>>>(hash_keys_.data<key_t>(),
-                                                                    num_hash_key);
+          initialize_hash_key<<<grid_size, block_size, 0, stream>>>(
+              hash_keys_.template data<key_t>(), num_hash_key);
         }
         {
           constexpr int block_size = 256;
           int grid_size = (num_model_key - 1) / block_size + 1;
           get_unique_index_kernel<<<grid_size, block_size, 0, stream>>>(
-              model_key.data<key_t>(), num_model_key, id_space_offset.data<offset_t>(),
-              id_space_list.data<int>(), num_local_embedding_, unique_id_space_list_.data<int>(),
-              unique_id_space_list_.num_elements(), hash_offset_.data<uint32_t>(),
-              hash_keys_.data<key_t>(), local_index_.data<uint32_t>());
+              model_key.template data<key_t>(), num_model_key,
+              id_space_offset.template data<offset_t>(), id_space_list.template data<int>(),
+              num_local_embedding_, unique_id_space_list_.template data<int>(),
+              unique_id_space_list_.num_elements(), hash_offset_.template data<uint32_t>(),
+              hash_keys_.template data<key_t>(), local_index_.template data<uint32_t>());
         }
         {
           DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(model_sp_weight.data_type().type(), dtype_t, [&] {
             size_t nbytes = d_temp_sort_sp_weight_storage_.num_bytes();
-            cub::DeviceRadixSort::SortPairs(
-                d_temp_sort_sp_weight_storage_.data(), nbytes, local_index_.data<uint32_t>(),
-                d_temp_sort_sp_weight_key_.data<uint32_t>(), model_sp_weight.data<dtype_t>(),
-                sorted_sp_weight_list_.data<dtype_t>(), num_model_key, 0, sort_end_bit_, stream);
+            cub::DeviceRadixSort::SortPairs(d_temp_sort_sp_weight_storage_.data(), nbytes,
+                                            local_index_.template data<uint32_t>(),
+                                            d_temp_sort_sp_weight_key_.template data<uint32_t>(),
+                                            model_sp_weight.template data<dtype_t>(),
+                                            sorted_sp_weight_list_.template data<dtype_t>(),
+                                            num_model_key, 0, sort_end_bit_, stream);
           });
         }
         {
           size_t nbytes = d_temp_sort_storage_.num_bytes();
-          cub::DeviceRadixSort::SortPairs(
-              d_temp_sort_storage_.data(), nbytes, local_index_.data<uint32_t>(),
-              sorted_local_index_.data<uint32_t>(), bucket_id_list_.data<uint32_t>(),
-              sorted_bucket_id_list_.data<uint32_t>(), num_model_key, 0, sort_end_bit_, stream);
+          cub::DeviceRadixSort::SortPairs(d_temp_sort_storage_.data(), nbytes,
+                                          local_index_.template data<uint32_t>(),
+                                          sorted_local_index_.template data<uint32_t>(),
+                                          bucket_id_list_.template data<uint32_t>(),
+                                          sorted_bucket_id_list_.template data<uint32_t>(),
+                                          num_model_key, 0, sort_end_bit_, stream);
         }
         {
           size_t nbytes = d_temp_run_length_encode_storage_.num_bytes();
-          cub::DeviceRunLengthEncode::Encode(
-              d_temp_run_length_encode_storage_.data(), nbytes,
-              sorted_local_index_.data<uint32_t>(), unique_local_index_.data<uint32_t>(),
-              sorted_bucket_id_offset_.data<uint32_t>() + 1, num_unique_key_.data<uint64_t>(),
-              num_model_key, stream);
+          cub::DeviceRunLengthEncode::Encode(d_temp_run_length_encode_storage_.data(), nbytes,
+                                             sorted_local_index_.template data<uint32_t>(),
+                                             unique_local_index_.template data<uint32_t>(),
+                                             sorted_bucket_id_offset_.template data<uint32_t>() + 1,
+                                             num_unique_key_.template data<uint64_t>(),
+                                             num_model_key, stream);
           HCTR_LIB_THROW(cudaStreamSynchronize(stream));  // to sync num_unique_key to host
         }
         int num_unique_table = unique_id_space_list_.num_elements();
@@ -646,27 +652,28 @@ void WeightedModelBackwardIndexCalculation::compute(
           constexpr int block_size = 256;
           int grid_size = (num_model_key - 1) / block_size + 1;
           extract_wgrad_dst_idx_kernel<<<grid_size, block_size, 0, stream>>>(
-              sorted_local_index_.data<uint32_t>(), num_model_key,
-              coordinate_wgrad_dst_idx_.data<uint32_t>());
+              sorted_local_index_.template data<uint32_t>(), num_model_key,
+              coordinate_wgrad_dst_idx_.template data<uint32_t>());
         }
         {
           constexpr int block_size = 256;
-          int num_unique_key_host = *num_unique_key_.data<uint64_t>();
+          int num_unique_key_host = *num_unique_key_.template data<uint64_t>();
           int grid_size = (num_unique_key_host - 1) / block_size + 1;
           convert_hash_index_to_key_kernel<<<grid_size, block_size, 0, stream>>>(
-              unique_local_index_.data<uint32_t>(), num_unique_key_host, hash_keys_.data<key_t>(),
-              unique_key_.data<key_t>());
+              unique_local_index_.template data<uint32_t>(), num_unique_key_host,
+              hash_keys_.template data<key_t>(), unique_key_.template data<key_t>());
           extract_wgrad_ev_dst_idx_kernel<<<grid_size, block_size, 0, stream>>>(
-              hash_offset_.data<uint32_t>(), num_unique_table, unique_local_index_.data<uint32_t>(),
-              num_unique_key_host, unique_id_space_ev_size_list_.data<int>(),
-              unique_dst_idx_.data<uint32_t>());
+              hash_offset_.template data<uint32_t>(), num_unique_table,
+              unique_local_index_.template data<uint32_t>(), num_unique_key_host,
+              unique_id_space_ev_size_list_.template data<int>(),
+              unique_dst_idx_.template data<uint32_t>());
         }
         HCTR_LIB_THROW(cudaStreamSynchronize(stream));
         {
           int num_unique_id_space = static_cast<int>(unique_id_space_list_.num_elements());
           count_unique_key_kernel<<<num_unique_id_space, 32, 0, stream>>>(
-              hash_keys_.data<key_t>(), hash_offset_.data<uint32_t>(), num_unique_id_space,
-              unique_id_space_offset_.data<uint32_t>());
+              hash_keys_.template data<key_t>(), hash_offset_.template data<uint32_t>(),
+              num_unique_id_space, unique_id_space_offset_.template data<uint32_t>());
 
           HCTR_LIB_THROW(cudaPeekAtLastError());
         }
@@ -674,19 +681,19 @@ void WeightedModelBackwardIndexCalculation::compute(
         {
           size_t nbytes = d_temp_scan_encode_storage_.num_bytes();
           cub::DeviceScan::InclusiveSum(d_temp_scan_encode_storage_.data(), nbytes,
-                                        unique_id_space_offset_.data<uint32_t>(),
-                                        unique_id_space_offset_.data<uint32_t>(),
+                                        unique_id_space_offset_.template data<uint32_t>(),
+                                        unique_id_space_offset_.template data<uint32_t>(),
                                         unique_id_space_offset_.num_elements(), stream);
           cub::DeviceScan::InclusiveSum(
-              d_temp_scan_encode_storage_.data(), nbytes, unique_dst_idx_.data<uint32_t>(),
-              unique_dst_idx_.data<uint32_t>(), unique_dst_idx_.num_elements(), stream);
+              d_temp_scan_encode_storage_.data(), nbytes, unique_dst_idx_.template data<uint32_t>(),
+              unique_dst_idx_.template data<uint32_t>(), unique_dst_idx_.num_elements(), stream);
           cub::DeviceScan::InclusiveSum(d_temp_scan_encode_storage_.data(), nbytes,
-                                        coordinate_wgrad_dst_idx_.data<uint32_t>(),
-                                        coordinate_wgrad_dst_idx_.data<uint32_t>(),
+                                        coordinate_wgrad_dst_idx_.template data<uint32_t>(),
+                                        coordinate_wgrad_dst_idx_.template data<uint32_t>(),
                                         coordinate_wgrad_dst_idx_.num_elements(), stream);
           cub::DeviceScan::InclusiveSum(d_temp_scan_encode_storage_.data(), nbytes,
-                                        sorted_bucket_id_offset_.data<uint32_t>(),
-                                        sorted_bucket_id_offset_.data<uint32_t>(),
+                                        sorted_bucket_id_offset_.template data<uint32_t>(),
+                                        sorted_bucket_id_offset_.template data<uint32_t>(),
                                         sorted_bucket_id_offset_.num_elements(), stream);
         }
         HCTR_LIB_THROW(cudaStreamSynchronize(stream));
@@ -694,7 +701,7 @@ void WeightedModelBackwardIndexCalculation::compute(
     });
   });
   unique_key = unique_key_;
-  *num_unique_key = *num_unique_key_.data<uint64_t>();
+  *num_unique_key = *num_unique_key_.template data<uint64_t>();
   unique_dst_idx = unique_dst_idx_;
   sorted_bucket_id_list = core23::Tensor(sorted_bucket_id_list_);
   sorted_bucket_id_offset = core23::Tensor(sorted_bucket_id_offset_);

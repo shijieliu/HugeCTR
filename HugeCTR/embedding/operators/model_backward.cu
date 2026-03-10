@@ -130,20 +130,21 @@ void LocalReduce::local_reduce(const ReductionIndices& reduction_indices,
   HCTR_CHECK_HINT(src_buffer_attr.layout == EmbeddingLayout::FeatureMajor,
                   "local reduce model comm buffer should be feature major");
 
-  const int* src_id_to_ev_start_indices_ptr = src_buffer_attr.id_to_ev_start_indices.data<int>();
-  const int* src_id_to_ev_size_ptr = reduction_indices.ev_sizes.data<int>();
-  const uint32_t* src_ids_ptr = reduction_indices.src_ids.data<uint32_t>();
+  const int* src_id_to_ev_start_indices_ptr =
+      src_buffer_attr.id_to_ev_start_indices.template data<int>();
+  const int* src_id_to_ev_size_ptr = reduction_indices.ev_sizes.template data<int>();
+  const uint32_t* src_ids_ptr = reduction_indices.src_ids.template data<uint32_t>();
 
-  const int* dst_table_id_to_ev_size_ptr = dst_attr.table_id_to_ev_size.data<int>();
+  const int* dst_table_id_to_ev_size_ptr = dst_attr.table_id_to_ev_size.template data<int>();
 
-  const int* dst_table_ids_ptr = wgrad.table_ids.data<int>();
-  const uint32_t* dst_ev_start_indices_ptr = wgrad.ev_start_indices.data<uint32_t>();
-  const uint32_t* dst_ids_ptr = reduction_indices.dst_ids.data<uint32_t>();
+  const int* dst_table_ids_ptr = wgrad.table_ids.template data<int>();
+  const uint32_t* dst_ev_start_indices_ptr = wgrad.ev_start_indices.template data<uint32_t>();
+  const uint32_t* dst_ids_ptr = reduction_indices.dst_ids.template data<uint32_t>();
   if (wgrad.attr.is_same_ev_size) {
     DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(src_buffer.attr.type.type(), emb_t, [&] {
       DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(wgrad.data.data_type().type(), grad_t, [&] {
         const emb_t** src_ptr = (const emb_t**)src_buffer.data.data();
-        grad_t* dst_ptr = wgrad.data.data<grad_t>();
+        grad_t* dst_ptr = wgrad.data.template data<grad_t>();
         emb_t** src_ptrs = (emb_t**)this->partial_reduce_result_.src_ptrs.data();
 
         mp_cal_src_ptrs_same_ev_size<<<core_->get_kernel_param().num_sms * 8, 256, 0, stream>>>(
@@ -184,7 +185,7 @@ void LocalReduce::local_reduce(const ReductionIndices& reduction_indices,
     DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(src_buffer.attr.type.type(), emb_t, [&] {
       DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(wgrad.data.data_type().type(), grad_t, [&] {
         const emb_t** src_ptr = (const emb_t**)src_buffer.data.data();
-        grad_t* dst_ptr = wgrad.data.data<grad_t>();
+        grad_t* dst_ptr = wgrad.data.template data<grad_t>();
         emb_t** src_ptrs = (emb_t**)this->partial_reduce_result_.src_ptrs.data();
 
         mp_cal_src_ptrs<<<core_->get_kernel_param().num_sms * 8, 256, 0, stream>>>(
@@ -234,23 +235,24 @@ void dp_local_reduce_from_feature_major_top_grad(
   HCTR_CHECK_HINT(src_buffer_attr.layout == EmbeddingLayout::FeatureMajor,
                   "local reduce model comm buffer should be feature major");
 
-  const int* local_lookup_ids_ptr = local_lookup_ids.data<int>();
+  const int* local_lookup_ids_ptr = local_lookup_ids.template data<int>();
 
-  const int* src_id_to_ev_start_indices_ptr = src_buffer_attr.id_to_ev_start_indices.data<int>();
-  const int* src_id_to_ev_size_ptr = reduction_indices.ev_sizes.data<int>();
+  const int* src_id_to_ev_start_indices_ptr =
+      src_buffer_attr.id_to_ev_start_indices.template data<int>();
+  const int* src_id_to_ev_size_ptr = reduction_indices.ev_sizes.template data<int>();
 
-  const uint32_t* src_ids_ptr = reduction_indices.src_ids.data<uint32_t>();
+  const uint32_t* src_ids_ptr = reduction_indices.src_ids.template data<uint32_t>();
 
-  const int* dst_table_id_to_ev_size_ptr = dst_attr.table_id_to_ev_size.data<int>();
+  const int* dst_table_id_to_ev_size_ptr = dst_attr.table_id_to_ev_size.template data<int>();
 
-  const int* dst_table_ids_ptr = wgrad.table_ids.data<int>();
-  const uint32_t* dst_ev_start_indices_ptr = wgrad.ev_start_indices.data<uint32_t>();
-  const uint32_t* dst_ids_ptr = reduction_indices.dst_ids.data<uint32_t>();
+  const int* dst_table_ids_ptr = wgrad.table_ids.template data<int>();
+  const uint32_t* dst_ev_start_indices_ptr = wgrad.ev_start_indices.template data<uint32_t>();
+  const uint32_t* dst_ids_ptr = reduction_indices.dst_ids.template data<uint32_t>();
 
   DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(src_buffer.attr.type.type(), emb_t, [&] {
     DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(wgrad.data.data_type().type(), grad_t, [&] {
-      const emb_t* src_ptr = src_buffer.data.data<emb_t>();
-      grad_t* dst_ptr = wgrad.data.data<grad_t>();
+      const emb_t* src_ptr = src_buffer.data.template data<emb_t>();
+      grad_t* dst_ptr = wgrad.data.template data<grad_t>();
       auto multi_to_one_desc_first_stage = make_MultiToOne_reduce_new<emb_t, grad_t>(
           [=] __device__() { return reduction_indices.num_elements; },
           [=] __device__(int i) { return src_id_to_ev_size_ptr[i]; },
@@ -291,24 +293,25 @@ void dp_local_reduce_from_batch_major_top_grad(
   HCTR_CHECK_HINT(src_buffer_attr.layout == EmbeddingLayout::BatchMajor,
                   "local reduce model comm buffer should be batch major");
 
-  const int* local_lookup_ids_ptr = local_lookup_ids.data<int>();
+  const int* local_lookup_ids_ptr = local_lookup_ids.template data<int>();
 
-  const int* src_id_to_ev_start_indices_ptr = src_buffer_attr.id_to_ev_start_indices.data<int>();
-  const int* src_id_to_ev_size_ptr = reduction_indices.ev_sizes.data<int>();
+  const int* src_id_to_ev_start_indices_ptr =
+      src_buffer_attr.id_to_ev_start_indices.template data<int>();
+  const int* src_id_to_ev_size_ptr = reduction_indices.ev_sizes.template data<int>();
 
-  const uint32_t* src_ids_ptr = reduction_indices.src_ids.data<uint32_t>();
+  const uint32_t* src_ids_ptr = reduction_indices.src_ids.template data<uint32_t>();
 
-  const int* dst_table_id_to_ev_size_ptr = dst_attr.table_id_to_ev_size.data<int>();
+  const int* dst_table_id_to_ev_size_ptr = dst_attr.table_id_to_ev_size.template data<int>();
 
-  const int* dst_table_ids_ptr = wgrad.table_ids.data<int>();
-  const uint32_t* dst_ev_start_indices_ptr = wgrad.ev_start_indices.data<uint32_t>();
-  const uint32_t* dst_ids_ptr = reduction_indices.dst_ids.data<uint32_t>();
+  const int* dst_table_ids_ptr = wgrad.table_ids.template data<int>();
+  const uint32_t* dst_ev_start_indices_ptr = wgrad.ev_start_indices.template data<uint32_t>();
+  const uint32_t* dst_ids_ptr = reduction_indices.dst_ids.template data<uint32_t>();
 
   DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(src_buffer.attr.type.type(), emb_t, [&] {
     DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(wgrad.data.data_type().type(), grad_t, [&] {
-      const emb_t* src_ptr = src_buffer.data.data<emb_t>();
+      const emb_t* src_ptr = src_buffer.data.template data<emb_t>();
 
-      grad_t* dst_ptr = wgrad.data.data<grad_t>();
+      grad_t* dst_ptr = wgrad.data.template data<grad_t>();
       auto multi_to_one_desc_first_stage = make_MultiToOne_reduce_new<emb_t, grad_t>(
           [=] __device__() { return reduction_indices.num_elements; },
           [=] __device__(int i) { return src_id_to_ev_size_ptr[i]; },

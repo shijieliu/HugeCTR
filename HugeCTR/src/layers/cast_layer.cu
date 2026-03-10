@@ -66,8 +66,8 @@ template <typename From, typename To>
 void CastLayer<From, To>::fprop(bool is_train) {
   CudaDeviceContext context(get_device_id());
 
-  const From* in = input_tensors_[0].data<From>();
-  To* out = output_tensors_[0].data<To>();
+  const From* in = input_tensors_[0].template data<From>();
+  To* out = output_tensors_[0].template data<To>();
   int num_elements = input_tensors_[0].num_elements();
 
   const auto threads = 512;

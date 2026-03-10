@@ -411,7 +411,8 @@ void get_raw_metric_as_host_float_tensor(Core23RawMetricMap metric_map, RawType 
     dim3 blockSize(256, 1, 1);
     dim3 gridSize((num + blockSize.x - 1) / blockSize.x, 1, 1);
     convert_half_to_float_kernel<<<gridSize, blockSize>>>(
-        raw_metric_tensor.data<__half>(), device_prediction_result.data<float>(), num);
+        raw_metric_tensor.template data<__half>(), device_prediction_result.template data<float>(),
+        num);
   } else {
     device_prediction_result = metric_map[raw_type];
     if (static_cast<int64_t>(num) != device_prediction_result.num_elements()) {
@@ -821,8 +822,8 @@ void AUC<T>::local_reduce(int local_gpu_id, Core23RawMetricMap raw_metrics) {
   int num_sms = resource_manager_->get_local_gpu(local_gpu_id)->get_sm_count();
   if (num_classes_ == 1) {
     copy_all<T>(st.fst(0).d_preds() + offset, st.fst(0).d_labels() + offset,
-                pred_tensor.data<PredType>(), label_tensor.data<LabelType>(), num_valid_samples,
-                num_sms, stream);
+                pred_tensor.template data<PredType>(), label_tensor.template data<LabelType>(),
+                num_valid_samples, num_sms, stream);
   } else {
     size_t input_size = num_valid_samples * num_classes_;
     if (st.realloc_local_reduce_storage(input_size)) {
@@ -831,15 +832,16 @@ void AUC<T>::local_reduce(int local_gpu_id, Core23RawMetricMap raw_metrics) {
 
     if (std::is_same<T, float>::value) {
       CUB_allocate_and_launch(st, 0, [&](void* workspace, size_t& size) {
-        return cub::DeviceRadixSort::SortPairs(
-            workspace, size, st.d_lr_class_ids(), st.d_lr_sorted_class_ids(),
-            (int*)pred_tensor.data<PredType>(), (int*)st.d_lr_sorted_preds(), input_size, 0,
-            8,  // begin_bit, end_bit
-            stream);
+        return cub::DeviceRadixSort::SortPairs(workspace, size, st.d_lr_class_ids(),
+                                               st.d_lr_sorted_class_ids(),
+                                               (int*)pred_tensor.template data<PredType>(),
+                                               (int*)st.d_lr_sorted_preds(), input_size, 0,
+                                               8,  // begin_bit, end_bit
+                                               stream);
       });
     } else {
-      copy_pred<T>(st.d_lr_unsorted_preds(), pred_tensor.data<PredType>(), input_size, num_sms,
-                   stream);
+      copy_pred<T>(st.d_lr_unsorted_preds(), pred_tensor.template data<PredType>(), input_size,
+                   num_sms, stream);
 
       CUB_allocate_and_launch(st, 0, [&](void* workspace, size_t& size) {
         return cub::DeviceRadixSort::SortPairs(
@@ -851,11 +853,12 @@ void AUC<T>::local_reduce(int local_gpu_id, Core23RawMetricMap raw_metrics) {
     }
 
     CUB_allocate_and_launch(st, 0, [&](void* workspace, size_t& size) {
-      return cub::DeviceRadixSort::SortPairs(
-          workspace, size, st.d_lr_class_ids(), st.d_lr_sorted_class_ids(),
-          (int*)label_tensor.data<LabelType>(), (int*)st.d_lr_sorted_labels(), input_size, 0,
-          8,  // begin_bit, end_bit
-          stream);
+      return cub::DeviceRadixSort::SortPairs(workspace, size, st.d_lr_class_ids(),
+                                             st.d_lr_sorted_class_ids(),
+                                             (int*)label_tensor.template data<LabelType>(),
+                                             (int*)st.d_lr_sorted_labels(), input_size, 0,
+                                             8,  // begin_bit, end_bit
+                                             stream);
     });
     HCTR_LIB_THROW(cudaStreamSynchronize(stream));
 
@@ -1021,7 +1024,7 @@ void AUC<T>::run_finalize_step(float* d_preds, float* d_labels, int local_id,
     float loc_max = pred_max_ - eps;
     auto clamp = [loc_min, loc_max] __host__ __device__(const float v) {
       return fmaxf(fminf(v, loc_max), loc_min);
-    }; 
+    };
     // cub::TransformInputIterator<float, decltype(clamp), float*> d_clamped_preds(d_preds, clamp);
     thrust::transform_iterator<decltype(clamp), float*> d_clamped_preds(d_preds, clamp);
 
@@ -1455,8 +1458,8 @@ void NDCG<T>::local_reduce(int local_gpu_id, Core23RawMetricMap raw_metrics) {
   int num_sms = resource_manager_->get_local_gpu(local_gpu_id)->get_sm_count();
 
   // Copy the labels and predictions to the internal buffer
-  copy_all<T>(st.d_preds() + offset, st.d_labels() + offset, pred_tensor.data<PredType>(),
-              label_tensor.data<LabelType>(), num_valid_samples, num_sms, stream);
+  copy_all<T>(st.d_preds() + offset, st.d_labels() + offset, pred_tensor.template data<PredType>(),
+              label_tensor.template data<LabelType>(), num_valid_samples, num_sms, stream);
 
   offset += num_valid_samples;
 
@@ -1784,7 +1787,7 @@ void HitRate<T>::local_reduce(int local_gpu_id, Core23RawMetricMap raw_metrics) 
       cudaMemsetAsync(hit_count_[local_gpu_id], 0, sizeof(int), local_gpu->get_stream()));
 
   collect_hits<T><<<grid, block, 0, local_gpu->get_stream()>>>(
-      pred_tensor.data<T>(), label_tensor.data<T>(), num_valid_samples,
+      pred_tensor.template data<T>(), label_tensor.template data<T>(), num_valid_samples,
       checked_count_[local_gpu_id], hit_count_[local_gpu_id]);
   int checked_host = 0;
   int hits_host = 0;
@@ -1911,7 +1914,8 @@ void SMAPE<T>::local_reduce(int local_gpu_id, Core23RawMetricMap raw_metrics) {
 
   cudaMemsetAsync(error_[local_gpu_id], 0, sizeof(float), local_gpu->get_stream());
   collect_error<T><<<grid, block, 0, local_gpu->get_stream()>>>(
-      pred_tensor.data<T>(), label_tensor.data<T>(), num_valid_samples, error_[local_gpu_id]);
+      pred_tensor.template data<T>(), label_tensor.template data<T>(), num_valid_samples,
+      error_[local_gpu_id]);
 
   checked_local_[local_gpu_id] = num_valid_samples;
   HCTR_LIB_THROW(cudaMemcpyAsync(&error_local_[local_gpu_id], error_[local_gpu_id], sizeof(float),

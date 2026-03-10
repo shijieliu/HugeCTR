@@ -76,7 +76,7 @@ void MomentumSGDOptimizer<T>::update() {
   const size_t len = flat_weight_tensor.size(0);
   const size_t grid_dim = (len - 1) / block_dim + 1;
 
-  float* momentum = momentum_tensor_.data<float>();
+  float* momentum = momentum_tensor_.template data<float>();
   momentum_sgd_update_kernel<<<grid_dim, block_dim, 0, gpu_resource_->get_stream()>>>(
       len, weight, momentum, wgrad, lr_, momentum_factor_, scaler_);
 }

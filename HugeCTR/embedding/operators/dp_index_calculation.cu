@@ -57,9 +57,10 @@ void DPLocalReduceIndexCalculation::cal_for_sparse_indices(
 
   DISPATCH_INTEGRAL_FUNCTION_CORE23(key_type.type(), key_t, [&] {
     cal_ev_start_indices_in_allreduce_wgrad_using_indices_kernel<<<144 * 8, 256, 0, stream>>>(
-        wgrad.unique_keys.data<key_t>(), wgrad.unique_keys.num_elements(),
-        ev_start_indices_in_allreduce_buffer.data<uint32_t>(), wgrad.num_unique_keys.data<size_t>(),
-        wgrad.ev_start_indices.data<uint32_t>());
+        wgrad.unique_keys.template data<key_t>(), wgrad.unique_keys.num_elements(),
+        ev_start_indices_in_allreduce_buffer.template data<uint32_t>(),
+        wgrad.num_unique_keys.template data<size_t>(),
+        wgrad.ev_start_indices.template data<uint32_t>());
   });
 }
 

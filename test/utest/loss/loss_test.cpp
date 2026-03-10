@@ -70,9 +70,9 @@ void cross_entropy_loss(int64_t batch_size) {
 
   cel.set_label_weight(1.0);
 
-  float *d_input = input_tensor.data<float>();
-  float *d_label = label_tensor.data<float>();
-  float *d_loss = loss_tensor.data<float>();
+  float *d_input = input_tensor.template data<float>();
+  float *d_label = label_tensor.template data<float>();
+  float *d_loss = loss_tensor.template data<float>();
 
   std::unique_ptr<float[]> h_input(new float[batch_size * feature_dim]);
   std::unique_ptr<float[]> h_label(new float[batch_size]);
@@ -147,9 +147,9 @@ void binary_cross_entropy_loss(int64_t batch_size) {
   BinaryCrossEntropyLoss<float> bce(label_tensor, input_tensor, loss_tensor, no_regularizer,
                                     test::get_default_gpu(), 1);
   bce.set_label_weight(1.0);
-  float *d_input = input_tensor.data<float>();
-  float *d_label = label_tensor.data<float>();
-  float *d_loss = loss_tensor.data<float>();
+  float *d_input = input_tensor.template data<float>();
+  float *d_label = label_tensor.template data<float>();
+  float *d_loss = loss_tensor.template data<float>();
 
   std::unique_ptr<float[]> h_input(new float[batch_size]);
   std::unique_ptr<float[]> h_label(new float[batch_size]);

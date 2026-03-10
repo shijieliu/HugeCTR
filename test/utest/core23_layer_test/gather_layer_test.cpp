@@ -64,7 +64,7 @@ void gather_layer_test(int64_t dimension, int64_t height, int64_t width, std::ve
       h_refs.get()[j * ts + i] = h_in.get()[indices.data()[j] * ts + i];
     }
   }
-  T* d_in = bottom_tensor.data<T>();
+  T* d_in = bottom_tensor.template data<T>();
   core23::copy_sync(d_in, h_in.get(), bottom_tensor.num_bytes(), bottom_tensor.device(),
                     core23::DeviceType::CPU);
 
@@ -72,7 +72,7 @@ void gather_layer_test(int64_t dimension, int64_t height, int64_t width, std::ve
   gather_layer.fprop(true);
   HCTR_LIB_THROW(cudaDeviceSynchronize());
 
-  T* d_out = top_tensor.data<T>();
+  T* d_out = top_tensor.template data<T>();
   core23::copy_sync(d2h_top.get(), d_out, top_tensor.num_bytes(), core23::DeviceType::CPU,
                     top_tensor.device());
 

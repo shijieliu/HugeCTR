@@ -31,7 +31,7 @@
 namespace HugeCTR {
 namespace MultiHot {
 
-//#define BENCH_IO
+// #define BENCH_IO
 
 struct FileSource {
   std::string name;

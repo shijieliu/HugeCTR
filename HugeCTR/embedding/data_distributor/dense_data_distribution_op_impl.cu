@@ -196,10 +196,10 @@ void DenseMPDataDistributionOp::all2all_keys_per_bucket(embedding::EmbeddingInpu
   DISPATCH_INTEGRAL_FUNCTION_CORE23(send_tensor.data_type().type(), BucketRangeType, [&] {
     ncclGroupStart();
     for (size_t peer = 0; peer < num_global_gpus_; ++peer) {
-      HCTR_LIB_THROW(ncclSend(send_tensor.data<BucketRangeType>() + peer, 1, nccl_type, peer,
-                              core_->get_nccl(), stream));
-      HCTR_LIB_THROW(ncclRecv(recv_tensor.data<BucketRangeType>() + peer, 1, nccl_type, peer,
-                              core_->get_nccl(), stream));
+      HCTR_LIB_THROW(ncclSend(send_tensor.template data<BucketRangeType>() + peer, 1, nccl_type,
+                              peer, core_->get_nccl(), stream));
+      HCTR_LIB_THROW(ncclRecv(recv_tensor.template data<BucketRangeType>() + peer, 1, nccl_type,
+                              peer, core_->get_nccl(), stream));
     }
     ncclGroupEnd();
   });
@@ -239,13 +239,13 @@ void DenseMPDataDistributionOp::all2all_keys(embedding::EmbeddingInput& output,
   //    ss << "global gpu_id:" << core_->get_device_id() << std::endl;
   //    ss << "gpu_send_tensor:";
   //    for (size_t i = 0; i < num_global_gpus_; ++i) {
-  //      ss << h_send_k_per_g.data<uint32_t>()[i] << " ";
+  //      ss << h_send_k_per_g.template data<uint32_t>()[i] << " ";
   //    }
   //    ss << std::endl;
   //
   //    ss << "gpu_recv_tensor:";
   //    for (size_t i = 0; i < num_global_gpus_; ++i) {
-  //      ss << h_recv_k_per_g.data<uint32_t>()[i] << " ";
+  //      ss << h_recv_k_per_g.template data<uint32_t>()[i] << " ";
   //    }
   //    ss << std::endl;
   //
@@ -261,23 +261,25 @@ void DenseMPDataDistributionOp::all2all_keys(embedding::EmbeddingInput& output,
     DISPATCH_INTEGRAL_FUNCTION_CORE23(d_send_k_per_g.data_type().type(), BucketRangeType, [&] {
       ncclGroupStart();
       for (size_t peer = 0; peer < num_global_gpus_; ++peer) {
-        auto send_num_keys = h_send_k_per_g.data<BucketRangeType>()[peer];
-        auto recv_num_keys = h_recv_k_per_g.data<BucketRangeType>()[peer];
+        auto send_num_keys = h_send_k_per_g.template data<BucketRangeType>()[peer];
+        auto recv_num_keys = h_recv_k_per_g.template data<BucketRangeType>()[peer];
         //        printf("GPU (%d) -> (%d) send_num_keys: %d, recv_num_keys: %d\n",
         //        core->get_global_gpu_id(),
         //               (int)peer, (int)send_num_keys, (int)recv_num_keys);
         if (send_num_keys > 0) {
-          HCTR_LIB_THROW(ncclSend(send_keys.data<KeyType>() + peer * max_num_key_per_partition,
-                                  send_num_keys, key_nccl_type, peer, core_->get_nccl(), stream));
-          HCTR_LIB_THROW(ncclSend(send_feature_ids.data<int>() + peer * max_num_key_per_partition,
-                                  send_num_keys, feature_id_nccl_type, peer, core_->get_nccl(),
-                                  stream));
+          HCTR_LIB_THROW(
+              ncclSend(send_keys.template data<KeyType>() + peer * max_num_key_per_partition,
+                       send_num_keys, key_nccl_type, peer, core_->get_nccl(), stream));
+          HCTR_LIB_THROW(
+              ncclSend(send_feature_ids.template data<int>() + peer * max_num_key_per_partition,
+                       send_num_keys, feature_id_nccl_type, peer, core_->get_nccl(), stream));
         }
         if (recv_num_keys > 0) {
-          HCTR_LIB_THROW(ncclRecv(recv_keys.data<KeyType>() + recv_offset, recv_num_keys,
+          HCTR_LIB_THROW(ncclRecv(recv_keys.template data<KeyType>() + recv_offset, recv_num_keys,
                                   key_nccl_type, peer, core_->get_nccl(), stream));
-          HCTR_LIB_THROW(ncclRecv(recv_feature_ids.data<int>() + recv_offset, recv_num_keys,
-                                  feature_id_nccl_type, peer, core_->get_nccl(), stream));
+          HCTR_LIB_THROW(ncclRecv(recv_feature_ids.template data<int>() + recv_offset,
+                                  recv_num_keys, feature_id_nccl_type, peer, core_->get_nccl(),
+                                  stream));
         }
         send_offset += send_num_keys;
         recv_offset += recv_num_keys;
@@ -310,7 +312,7 @@ void DenseMPDataDistributionOp::filter_after_all2all(embedding::EmbeddingInput& 
       dense_temp_storage_.partitioned_data_after_shard_matrix_partition,
       dense_compression_output.model_parallel_compression_input.network_reverse_idx};
   dense_compression_output.model_parallel_compression_input.num_network_reverse_idx =
-      *(dense_temp_storage_.h_num_network_reverse_idx.data<uint64_t>());
+      *(dense_temp_storage_.h_num_network_reverse_idx.template data<uint64_t>());
   compress_reverse_idx_range_operator_(
       dense_compression_output.model_parallel_compression_input.num_network_reverse_idx,
       compressed_data_after_shard_matrix_partition, stream);
@@ -320,7 +322,7 @@ void DenseMPDataDistributionOp::filter_after_all2all(embedding::EmbeddingInput& 
                                      continuous_partition_data, stream);
 
   // there is already a sync in compact_partition_data so we dont need sync here
-  output.h_num_keys = *(output.num_keys.data<uint64_t>());
+  output.h_num_keys = *(output.num_keys.template data<uint64_t>());
 }
 
 void DenseMPDataDistributionOp::convert_indices(embedding::EmbeddingInput& output) {

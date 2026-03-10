@@ -97,8 +97,8 @@ void LocalizedSlotSparseEmbeddingHash<TypeHashKey, TypeEmbeddingComp>::filter_ke
   size_t rowoffset_num_without_zero = rowoffset_num_before_filter - 1;
   size_t rowoffset_num_after_filter = batch_size * slot_num_per_gpu + 1;
   if (rowoffset_tensor.get_num_elements() != rowoffset_num_after_filter) {
-    HCTR_LOG_S(ERROR, WORLD) << "rowoffset_num_after_filter:" << rowoffset_num_after_filter << "!="
-                             << "rowoffset_tensor num_elements:"
+    HCTR_LOG_S(ERROR, WORLD) << "rowoffset_num_after_filter:" << rowoffset_num_after_filter
+                             << "!=" << "rowoffset_tensor num_elements:"
                              << rowoffset_tensor.get_num_elements() << std::endl;
     HCTR_OWN_THROW(Error_t::WrongInput, "filter rowoffset size not match.");
   }

@@ -70,8 +70,8 @@ void ReluLayer<T>::fprop(bool is_train) {
 
   auto fop = [] __device__(T in) { return (in > T(0)) ? in : T(0); };
 
-  MLCommon::LinAlg::unaryOp(output_tensors_[0].data<T>(), input_tensors_[0].data<T>(), len, fop,
-                            get_gpu().get_stream());
+  MLCommon::LinAlg::unaryOp(output_tensors_[0].template data<T>(),
+                            input_tensors_[0].template data<T>(), len, fop, get_gpu().get_stream());
 }
 
 template <typename T>
@@ -80,8 +80,9 @@ void ReluLayer<T>::bprop() {
 
   int len = input_tensors_[0].num_elements();
   auto bop = [] __device__(T d_out, T d_in) { return (d_in > T(0)) ? d_out : T(0); };
-  MLCommon::LinAlg::binaryOp(input_tensors_[0].data<T>(), output_tensors_[0].data<T>(),
-                             input_tensors_[0].data<T>(), len, bop, get_gpu().get_stream());
+  MLCommon::LinAlg::binaryOp(
+      input_tensors_[0].template data<T>(), output_tensors_[0].template data<T>(),
+      input_tensors_[0].template data<T>(), len, bop, get_gpu().get_stream());
 }
 
 ReluLayer<__half>::ReluLayer(const core23::Tensor& input_tensor,
@@ -98,7 +99,7 @@ void ReluLayer<__half>::fprop(bool is_train) {
   const auto grid_dim = get_gpu().get_sm_count() * 4;
 
   half4_relu_kernel<<<grid_dim, BLOCK_DIM, 0, get_gpu().get_stream()>>>(
-      output_tensors_[0].data<__half>(), input_tensors_[0].data<__half>(), size,
+      output_tensors_[0].template data<__half>(), input_tensors_[0].template data<__half>(), size,
       [] __device__(const half4* in4, const __half2 zero2, int i, half4* out4) {
         const int2 hack = reinterpret_cast<const int2*>(in4)[i];
         half4 t = *reinterpret_cast<const half4*>(&hack);
@@ -123,7 +124,7 @@ void ReluLayer<__half>::bprop() {
   const size_t size = input_tensors_[0].num_elements();
   const size_t grid_dim = get_gpu().get_sm_count() * 4;
   half4_relu_kernel<<<grid_dim, BLOCK_DIM, 0, get_gpu().get_stream()>>>(
-      input_tensors_[0].data<__half>(), output_tensors_[0].data<__half>(), size,
+      input_tensors_[0].template data<__half>(), output_tensors_[0].template data<__half>(), size,
       [] __device__(const half4* in4, const __half2 zero2, int i, half4* out4) {
         const int2 t_hack = reinterpret_cast<const int2*>(out4)[i];
         const half4 t = *reinterpret_cast<const half4*>(&t_hack);

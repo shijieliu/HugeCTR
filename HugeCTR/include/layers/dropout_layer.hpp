@@ -42,7 +42,7 @@ class DropoutLayer : public Layer {
    */
   void bprop() override;
 
-  const float* mask() const { return noise_mask_.data<float>(); }
+  const float* mask() const { return noise_mask_.template data<float>(); }
 
  private:
   cudnnDropoutDescriptor_t dropout_descriptor_;

@@ -93,12 +93,12 @@ void ConcatLayer<T>::fprop(bool is_train) {
   int block_size = 256;
   int n_blocks = get_gpu().get_sm_count() * 8;
   auto& output_tensor = output_tensors_[0];
-  T* out = output_tensor.data<T>();
+  T* out = output_tensor.template data<T>();
   const int2 out_dim = {static_cast<int>(output_tensor.shape().size(0)),
                         static_cast<int>(output_tensor.shape().size(1))};
   int offset = 0;
   for (auto& input_tensor : input_tensors_) {
-    T* in = input_tensor.data<T>();
+    T* in = input_tensor.template data<T>();
     const int2 in_dim = {static_cast<int>(input_tensor.shape().size(0)),
                          static_cast<int>(input_tensor.shape().size(1))};
 
@@ -115,14 +115,14 @@ void ConcatLayer<T>::bprop() {
   int block_size = 256;
   int n_blocks = get_gpu().get_sm_count() * 8;
   auto& output_tensor = output_tensors_[0];
-  T* out = output_tensor.data<T>();
+  T* out = output_tensor.template data<T>();
   const int2 out_dim = {static_cast<int>(output_tensor.shape().size(0)),
                         static_cast<int>(output_tensor.shape().size(1))};
   int grid_size = std::min(out_dim.x, n_blocks);
   int offset = 0;
   for (std::size_t i = 0; i < input_tensors_.size(); i++) {
     auto& input_tensor = input_tensors_[i];
-    T* in = input_tensor.data<T>();
+    T* in = input_tensor.template data<T>();
     const int2 in_dim = {static_cast<int>(input_tensor.shape().size(0)),
                          static_cast<int>(input_tensor.shape().size(1))};
 

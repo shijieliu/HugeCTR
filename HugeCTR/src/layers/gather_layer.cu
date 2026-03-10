@@ -89,8 +89,8 @@ void GatherLayer<T>::fprop(bool is_train) {
   int n_blocks = get_gpu().get_sm_count() * 4;
   core23::Tensor& in_tensor = input_tensors_[0];
   core23::Tensor& out_tensor = output_tensors_[0];
-  T* out = out_tensor.data<T>();
-  T* in = in_tensor.data<T>();
+  T* out = out_tensor.template data<T>();
+  T* in = in_tensor.template data<T>();
   gather_kernel<<<n_blocks, block_size, 0, get_gpu().get_stream()>>>(
       true, in, out, tensor_size_, num_indices_, static_cast<int*>(indices23_.data()));
 }
@@ -101,8 +101,8 @@ void GatherLayer<T>::bprop() {
   int n_blocks = get_gpu().get_sm_count() * 4;
   core23::Tensor& in_tensor = input_tensors_[0];
   core23::Tensor& out_tensor = output_tensors_[0];
-  T* out = out_tensor.data<T>();
-  T* in = in_tensor.data<T>();
+  T* out = out_tensor.template data<T>();
+  T* in = in_tensor.template data<T>();
   int h = in_tensor.shape().size(0);
   initialize_array<<<n_blocks, block_size, 0, get_gpu().get_stream()>>>(in, h * tensor_size_, T(0));
   gather_kernel<<<n_blocks, block_size, 0, get_gpu().get_stream()>>>(

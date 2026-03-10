@@ -140,8 +140,8 @@ template <typename T>
 void FmOrder2Layer<T>::fprop(bool is_train) {
   CudaDeviceContext context(get_device_id());
 
-  const auto* in = input_tensors_[0].data<T>();
-  auto* out = output_tensors_[0].data<T>();
+  const auto* in = input_tensors_[0].template data<T>();
+  auto* out = output_tensors_[0].template data<T>();
 
   dim3 blockSize(embedding_vec_size_, 1, 1);
   dim3 grdiSize(batch_size_, 1, 1);
@@ -153,8 +153,8 @@ template <typename T>
 void FmOrder2Layer<T>::bprop() {
   CudaDeviceContext context(get_device_id());
 
-  auto* in = input_tensors_[0].data<T>();
-  const auto* out = output_tensors_[0].data<T>();
+  auto* in = input_tensors_[0].template data<T>();
+  const auto* out = output_tensors_[0].template data<T>();
 
   dim3 blockSize(embedding_vec_size_, 1, 1);
   dim3 gridSize(batch_size_, 1, 1);

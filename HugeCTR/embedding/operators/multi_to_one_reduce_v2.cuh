@@ -311,16 +311,17 @@ void multi_to_one_reduce_v2(CopyDesc1 multi_to_one_desc_first_stage,
                             const HugeCTR::core23::KernelParams& kernel_params,
                             PartialReduceResult& partial_reduce_result, Wgrad& wgrad,
                             int max_ev_size, cudaStream_t stream) {
-  auto partial_grad_ev_ptr = partial_reduce_result.partial_wgrad_new.data<float>();
-  auto partial_ev_length_ptr = partial_reduce_result.partial_ev_length_new.data<int32_t>();
-  auto partial_dst_id_array_ptr = partial_reduce_result.partial_dst_id_array_new.data<uint32_t>();
+  auto partial_grad_ev_ptr = partial_reduce_result.partial_wgrad_new.template data<float>();
+  auto partial_ev_length_ptr = partial_reduce_result.partial_ev_length_new.template data<int32_t>();
+  auto partial_dst_id_array_ptr =
+      partial_reduce_result.partial_dst_id_array_new.template data<uint32_t>();
 
-  const int* table_ids_ptr = wgrad.table_ids.data<int>();
-  const int* table_id_to_ev_size_ptr = wgrad.attr.table_id_to_ev_size.data<int>();
-  const uint32_t* dst_ev_start_indices_ptr = wgrad.ev_start_indices.data<uint32_t>();
+  const int* table_ids_ptr = wgrad.table_ids.template data<int>();
+  const int* table_id_to_ev_size_ptr = wgrad.attr.table_id_to_ev_size.template data<int>();
+  const uint32_t* dst_ev_start_indices_ptr = wgrad.ev_start_indices.template data<uint32_t>();
   size_t second_num = (reduction_indices.num_elements - 1) / EV_NUM + 1;
   DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(wgrad.data.data_type().type(), grad_t, [&] {
-    grad_t* dst_ptr = wgrad.data.data<grad_t>();
+    grad_t* dst_ptr = wgrad.data.template data<grad_t>();
     auto multi_to_one_desc_second_stage = make_MultiToOne_reduce_new<float, grad_t>(
         [=] __device__() { return second_num; },
         [=] __device__(int i) { return partial_ev_length_ptr[i]; },

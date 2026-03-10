@@ -173,7 +173,7 @@ void Concat3DLayer<T>::initialize() {
                             .shape({static_cast<int64_t>(input_tensors_.size())})
                             .data_type(core23::ScalarType::Pointer));
   for (int64_t i = 0; i < h_ptrs.num_elements(); i++) {
-    h_ptrs.data<T*>()[i] = input_tensors_[i].data<T>();
+    h_ptrs.template data<T*>()[i] = input_tensors_[i].template data<T>();
   }
   d_ptrs_ = core23::Tensor(h_ptrs.my_params().device(output_tensors_[0].device()));
   core23::copy_async(d_ptrs_, h_ptrs, get_gpu().get_stream());
@@ -190,8 +190,8 @@ void Concat3DLayer<T>::fprop(bool is_train) {
   size_t n_sms = get_gpu().get_sm_count();
   dim3 grid_size(n_sms * 8, 1, 1);
   int axis = axis_;
-  T** d_ptrs = d_ptrs_.data<T*>();
-  T* output = output_tensors_[0].data<T>();
+  T** d_ptrs = d_ptrs_.template data<T*>();
+  T* output = output_tensors_[0].template data<T>();
   if (axis == 1) {
     concat_3d_along_axis_1_kernel<<<grid_size, block_size, 0, get_gpu().get_stream()>>>(
         true, d_ptrs, output, batch_size_, new_slot_num_, new_width_, num_);
@@ -210,8 +210,8 @@ void Concat3DLayer<T>::bprop() {
   dim3 block_size(256, 1, 1);
   size_t n_sms = get_gpu().get_sm_count();
   dim3 grid_size(n_sms * 8, 1, 1);
-  T** d_ptrs = d_ptrs_.data<T*>();
-  T* output = output_tensors_[0].data<T>();
+  T** d_ptrs = d_ptrs_.template data<T*>();
+  T* output = output_tensors_[0].template data<T>();
   if (axis == 1) {
     concat_3d_along_axis_1_kernel<<<grid_size, block_size, 0, get_gpu().get_stream()>>>(
         false, d_ptrs, output, batch_size_, new_slot_num_, new_width_, num_);

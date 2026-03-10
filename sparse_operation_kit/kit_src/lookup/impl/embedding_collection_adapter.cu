@@ -234,8 +234,8 @@ void TFAdapter<KeyType, OffsetType, DType>::lookup(const core23::Tensor& keys, s
                                                    const core23::Tensor& id_space,
                                                    core23::Tensor& embedding_vec) {
   TFAdapterKernel<KeyType, OffsetType, DType><<<2 * sm_count_, 1024ul, 0, stream_>>>(
-      d_data_, d_dimensions_, d_scale_, d_id_space_to_local_index_, keys.data<KeyType>(), num_keys,
-      id_space_offset.data<OffsetType>(), num_id_space_offset - 1, id_space.data<int>(),
+      d_data_, d_dimensions_, d_scale_, d_id_space_to_local_index_, keys.template data<KeyType>(), num_keys,
+      id_space_offset.template data<OffsetType>(), num_id_space_offset - 1, id_space.template data<int>(),
       static_cast<DType**>(embedding_vec.data()));
   // CUDACHECK(cudaStreamSynchronize(stream_));
   // CUDACHECK(cudaGetLastError());
@@ -303,12 +303,12 @@ void DummyVarAdapter<KeyType, OffsetType, DType>::lookup(
   id_space_.clear();
   id_space_offset_.resize(num_id_space_offset);
   CUDACHECK(cudaMemcpyAsync(id_space_offset_.data(),
-                            id_space_offset.data<OffsetType>(),
+                            id_space_offset.template data<OffsetType>(),
                             sizeof(OffsetType) * (num_id_space_offset),
                             cudaMemcpyDeviceToHost, stream_));
   id_space_.resize(num_id_space_offset - 1);
   CUDACHECK(cudaMemcpyAsync(id_space_.data(),
-                            id_space.data<int>(),
+                            id_space.template data<int>(),
                             sizeof(int) * (num_id_space_offset - 1),
                             cudaMemcpyDeviceToHost, stream_));
   // clang-format on
@@ -316,7 +316,7 @@ void DummyVarAdapter<KeyType, OffsetType, DType>::lookup(
   CUDACHECK(cudaStreamSynchronize(stream_));
 
   DType** output = static_cast<DType**>(embedding_vec.data());
-  const KeyType* input = keys.data<KeyType>();
+  const KeyType* input = keys.template data<KeyType>();
 
   // HugeCTR::CudaDeviceContext context(tf_backend_->get_device_id());
   core23::Device device(core23::DeviceType::GPU, tf_backend_->get_device_id());
@@ -359,17 +359,17 @@ void DummyVarAdapter<KeyType, OffsetType, DType>::lookup(
           unique = embedding::unique_op<KeyType, uint64_t, std::numeric_limits<KeyType>::max(),
                                         std::numeric_limits<uint64_t>::max()>(tf_backend_, num);
 
-      unique.unique(input, num, unique_reverse_idxs.data<uint64_t>(), unique_keys.data<KeyType>(),
-                    num_unique_keys.data<uint64_t>(), stream_);
+      unique.unique(input, num, unique_reverse_idxs.template data<uint64_t>(), unique_keys.template data<KeyType>(),
+                    num_unique_keys.template data<uint64_t>(), stream_);
 
       CUDACHECK(cudaStreamSynchronize(stream_));
       auto var = vars_[id_space_[start_index]];
       // var->lookup(input, output, num, stream_);
       DType** unique_output_ptr = static_cast<DType**>(unique_output.data());
-      var->lookup(unique_keys.data<KeyType>(), unique_output_ptr,
-                  static_cast<size_t>(*(num_unique_keys.data<uint64_t>())), stream_);
+      var->lookup(unique_keys.template data<KeyType>(), unique_output_ptr,
+                  static_cast<size_t>(*(num_unique_keys.template data<uint64_t>())), stream_);
       UniqueReverseKernel<<<((num - 1) / 1024) + 1, 1024, 0, stream_>>>(
-          unique_output_ptr, unique_reverse_idxs.data<uint64_t>(), num, output);
+          unique_output_ptr, unique_reverse_idxs.template data<uint64_t>(), num, output);
       CUDACHECK(cudaStreamSynchronize(stream_));
       input += num;
       output += num;
@@ -389,18 +389,18 @@ void DummyVarAdapter<KeyType, OffsetType, DType>::ratio_filter(
   id_space_.clear();
   id_space_offset_.resize(num_id_space_offset);
   CUDACHECK(cudaMemcpyAsync(id_space_offset_.data(),
-                            id_space_offset.data<OffsetType>(),
+                            id_space_offset.template data<OffsetType>(),
                             sizeof(OffsetType) * (num_id_space_offset),
                             cudaMemcpyDeviceToHost, stream_));
   id_space_.resize(num_id_space_offset - 1);
   CUDACHECK(cudaMemcpyAsync(id_space_.data(),
-                            id_space.data<int>(),
+                            id_space.template data<int>(),
                             sizeof(int) * (num_id_space_offset - 1),
                             cudaMemcpyDeviceToHost, stream_));
   // clang-format on
   CUDACHECK(cudaStreamSynchronize(stream_));
-  const KeyType* input = keys.data<KeyType>();
-  bool* output_filtered = filtered.data<bool>();
+  const KeyType* input = keys.template data<KeyType>();
+  bool* output_filtered = filtered.template data<bool>();
   int start_index = 0;
   size_t num = 0;
   bool is_lookup = false;

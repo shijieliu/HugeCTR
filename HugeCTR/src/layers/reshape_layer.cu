@@ -134,20 +134,22 @@ void ReshapeLayer<T>::prop_common(bool forward, bool is_train, cudaStream_t stre
 
   if (in_place_) {
     if (forward) {
-      HCTR_LIB_THROW(cudaMemcpyAsync(output_tensor.data<T>(), input_tensor.data<T>(),
-                                     input_tensor.num_bytes(), cudaMemcpyDeviceToDevice, stream));
+      HCTR_LIB_THROW(cudaMemcpyAsync(output_tensor.template data<T>(),
+                                     input_tensor.template data<T>(), input_tensor.num_bytes(),
+                                     cudaMemcpyDeviceToDevice, stream));
     } else {
-      HCTR_LIB_THROW(cudaMemcpyAsync(input_tensor.data<T>(), output_tensor.data<T>(),
-                                     output_tensor.num_bytes(), cudaMemcpyDeviceToDevice, stream));
+      HCTR_LIB_THROW(cudaMemcpyAsync(input_tensor.template data<T>(),
+                                     output_tensor.template data<T>(), output_tensor.num_bytes(),
+                                     cudaMemcpyDeviceToDevice, stream));
     }
   } else {
     int block_size = 128;
     int n_block = get_gpu().get_sm_count() * 16;
-    T* in = input_tensor.data<T>();
-    T* out = output_tensor.data<T>();
+    T* in = input_tensor.template data<T>();
+    T* out = output_tensor.template data<T>();
     reshape_kernel<<<n_block, block_size>>>(in, out, batch_size_, n_slot_, vector_length_,
-                                            selected_slots_tensor_.data<int32_t>(), n_active_slot_,
-                                            forward);
+                                            selected_slots_tensor_.template data<int32_t>(),
+                                            n_active_slot_, forward);
   }
 }
 

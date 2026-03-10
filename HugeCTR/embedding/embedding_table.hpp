@@ -29,7 +29,7 @@ class ILookup {
 
   virtual void ratio_filter(const core23::Tensor& keys, size_t num_keys,
                             const core23::Tensor& id_space_offset, size_t num_id_space_offset,
-                            const core23::Tensor& id_space, core23::Tensor& filtered){};
+                            const core23::Tensor& id_space, core23::Tensor& filtered) {};
 };
 
 }  // namespace embedding

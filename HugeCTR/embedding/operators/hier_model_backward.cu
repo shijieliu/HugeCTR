@@ -188,17 +188,18 @@ void IntraModelBackward::backward(const IntraModelCommBufferAttr &intra_model_co
         embedding_input.bucket_range.data_type().type(), offset_t, [&] {
           emb_t **dst_ptr = (emb_t **)model_comm_buffer.data.data();
           using CopyDesc = IntraModelBackwardOneToOneDesc<emb_t, offset_t>;
-          CopyDesc one_to_one_desc{(int)(batch_size * attr.h_global_lookup_ids_in_local_gpu.size()),
-                                   (const emb_t ***)reduction_buffer.peer_data.data(),
-                                   dst_ptr,
-                                   embedding_input.bucket_range.data<offset_t>(),
-                                   attr.local_gpu_lookup_ids_to_node_lookup_ids.data<int>(),
-                                   reduction_buffer.attr.id_to_ev_start_indices.data<int>(),
-                                   attr.evsizes_in_local_gpu.data<int>(),
-                                   model_comm_buffer.attr.id_to_ev_start_indices.data<int>(),
-                                   batch_size,
-                                   batch_size_per_gpu,
-                                   num_local_gpus};
+          CopyDesc one_to_one_desc{
+              (int)(batch_size * attr.h_global_lookup_ids_in_local_gpu.size()),
+              (const emb_t ***)reduction_buffer.peer_data.data(),
+              dst_ptr,
+              embedding_input.bucket_range.template data<offset_t>(),
+              attr.local_gpu_lookup_ids_to_node_lookup_ids.template data<int>(),
+              reduction_buffer.attr.id_to_ev_start_indices.template data<int>(),
+              attr.evsizes_in_local_gpu.template data<int>(),
+              model_comm_buffer.attr.id_to_ev_start_indices.template data<int>(),
+              batch_size,
+              batch_size_per_gpu,
+              num_local_gpus};
           copy_one_to_one(one_to_one_desc, reduction_buffer.attr.max_ev_size, stream);
         })
   });

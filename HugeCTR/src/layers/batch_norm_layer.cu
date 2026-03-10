@@ -140,16 +140,16 @@ void BatchNormLayer<T>::fprop(bool is_train) {
 
   core23::Tensor& in_tensor = this->input_tensors_[0];
   core23::Tensor& out_tensor = this->output_tensors_[0];
-  T* in = in_tensor.data<T>();
-  T* out = out_tensor.data<T>();
+  T* in = in_tensor.template data<T>();
+  T* out = out_tensor.template data<T>();
 
-  float* gamma = gamma_.data<float>();
-  float* beta = beta_.data<float>();
+  float* gamma = gamma_.template data<float>();
+  float* beta = beta_.template data<float>();
 
-  float* result_running_mean = result_running_mean_.data<float>();
-  float* result_running_var = result_running_var_.data<float>();
-  float* result_save_mean = result_save_mean_.data<float>();
-  float* result_save_inv_var = result_save_inv_var_.data<float>();
+  float* result_running_mean = result_running_mean_.template data<float>();
+  float* result_running_var = result_running_var_.template data<float>();
+  float* result_save_mean = result_save_mean_.template data<float>();
+  float* result_save_inv_var = result_save_inv_var_.template data<float>();
 
   if (is_train) {
     HCTR_LIB_THROW(cudnnBatchNormalizationForwardTraining(
@@ -171,16 +171,16 @@ void BatchNormLayer<T>::bprop() {
 
   core23::Tensor& in_tensor = this->input_tensors_[0];
   core23::Tensor& out_tensor = this->output_tensors_[0];
-  T* in = in_tensor.data<T>();
-  T* out = out_tensor.data<T>();
+  T* in = in_tensor.template data<T>();
+  T* out = out_tensor.template data<T>();
 
-  float* gamma = gamma_.data<float>();
+  float* gamma = gamma_.template data<float>();
 
-  float* gamma_grad = gamma_grad_.data<float>();
-  float* beta_grad = beta_grad_.data<float>();
+  float* gamma_grad = gamma_grad_.template data<float>();
+  float* beta_grad = beta_grad_.template data<float>();
 
-  float* result_save_mean = result_save_mean_.data<float>();
-  float* result_save_inv_var = result_save_inv_var_.data<float>();
+  float* result_save_mean = result_save_mean_.template data<float>();
+  float* result_save_inv_var = result_save_inv_var_.template data<float>();
 
   HCTR_LIB_THROW(cudnnBatchNormalizationBackward(
       this->get_gpu().get_cudnn_handle(), mode_, &one, &zero, &one, &zero, in_out_desc_, in,
@@ -190,8 +190,8 @@ void BatchNormLayer<T>::bprop() {
 
 template <typename T>
 std::string BatchNormLayer<T>::get_no_trained_params_in_string() {
-  float* d_result_running_mean = result_running_mean_.data<float>();
-  float* d_result_running_var = result_running_var_.data<float>();
+  float* d_result_running_mean = result_running_mean_.template data<float>();
+  float* d_result_running_var = result_running_var_.template data<float>();
   int64_t n_byte = result_running_mean_.num_bytes();
 
   int64_t n_elem = n_byte / sizeof(T);
@@ -204,14 +204,14 @@ std::string BatchNormLayer<T>::get_no_trained_params_in_string() {
   std::string result = "      \"type\": \"BatchNorm\",\n";
   result += "      \"mean\": [";
   for (int64_t i = 0; i < n_elem; i++) {
-    result += std::to_string(ToStringType<T>(h_result_running_mean_.data<float>()[i]));
+    result += std::to_string(ToStringType<T>(h_result_running_mean_.template data<float>()[i]));
     if (i != (n_elem - 1)) result += ", ";
   }
   result += "],\n";
 
   result += "      \"var\": [";
   for (int64_t i = 0; i < n_elem; i++) {
-    result += std::to_string(ToStringType<T>(h_result_running_var_.data<float>()[i]));
+    result += std::to_string(ToStringType<T>(h_result_running_var_.template data<float>()[i]));
     if (i != (n_elem - 1)) result += ", ";
   }
   result += "]";

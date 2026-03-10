@@ -246,18 +246,18 @@ MultiHeadAttentionLayer<T>::MultiHeadAttentionLayer(
 template <typename T>
 void MultiHeadAttentionLayer<T>::fprop(bool is_train) {
   CudaDeviceContext context(get_device_id());
-  T* query = input_tensors_[0].data<T>();
-  T* key = input_tensors_[1].data<T>();
-  T* value = input_tensors_[2].data<T>();
+  T* query = input_tensors_[0].template data<T>();
+  T* key = input_tensors_[1].template data<T>();
+  T* value = input_tensors_[2].template data<T>();
 
-  T* query_buf = query_buf_tensor_.data<T>();
-  T* key_buf = key_buf_tensor_.data<T>();
+  T* query_buf = query_buf_tensor_.template data<T>();
+  T* key_buf = key_buf_tensor_.template data<T>();
 
-  T* score = attention_score_4d_.data<T>();
-  T* value_4d = attention_value_4d_.data<T>();
+  T* score = attention_score_4d_.template data<T>();
+  T* value_4d = attention_value_4d_.template data<T>();
   // attention_out = transpose(attention_out_tmp)
-  T* attention_out = output_tensors_[0].data<T>();
-  T* attention_out_tmp = attention_out_4d_.data<T>();
+  T* attention_out = output_tensors_[0].template data<T>();
+  T* attention_out_tmp = attention_out_4d_.template data<T>();
 
   const auto& in_tensor_shape = input_tensors_[0].shape();
   const auto& out_tensor_shape = output_tensors_[0].shape();
@@ -336,7 +336,7 @@ void MultiHeadAttentionLayer<T>::fprop(bool is_train) {
   } else {
     softmax_layer_->fprop(true);
   }
-  score = attention_softmax_4d_.data<T>();
+  score = attention_softmax_4d_.template data<T>();
   /* 4. bgemm
      input : attention_softmax_4d_(score), attention_value_4d_
      output: attention_out_tmp -> attention_out
@@ -374,17 +374,17 @@ void MultiHeadAttentionLayer<T>::fprop(bool is_train) {
 template <typename T>
 void MultiHeadAttentionLayer<T>::bprop() {
   CudaDeviceContext context(get_device_id());
-  T* query = input_tensors_[0].data<T>();
-  T* key = input_tensors_[1].data<T>();
-  T* value = input_tensors_[2].data<T>();
+  T* query = input_tensors_[0].template data<T>();
+  T* key = input_tensors_[1].template data<T>();
+  T* value = input_tensors_[2].template data<T>();
 
-  T* query_buf = query_buf_tensor_.data<T>();
-  T* key_buf = key_buf_tensor_.data<T>();
+  T* query_buf = query_buf_tensor_.template data<T>();
+  T* key_buf = key_buf_tensor_.template data<T>();
 
-  T* score = attention_softmax_4d_.data<T>();
-  T* value_4d = attention_value_4d_.data<T>();
-  T* attention_out = output_tensors_[0].data<T>();
-  T* attention_out_tmp = attention_out_4d_.data<T>();
+  T* score = attention_softmax_4d_.template data<T>();
+  T* value_4d = attention_value_4d_.template data<T>();
+  T* attention_out = output_tensors_[0].template data<T>();
+  T* attention_out_tmp = attention_out_4d_.template data<T>();
 
   const auto& in_tensor_shape = input_tensors_[0].shape();
   const auto& out_tensor_shape = output_tensors_[0].shape();
@@ -434,7 +434,7 @@ void MultiHeadAttentionLayer<T>::bprop() {
         get_gpu().get_cublas_handle(), CUBLAS_OP_T, CUBLAS_OP_N, n, m, k, &alpha, value_4d, b_type,
         k, stride_a, attention_out_tmp, b_type, k, stride_b, &beta, score, c_type, n, stride_c,
         batch_count, compute_type, algo));
-    T* cur_Q = fprop_softmax_tensor_.data<T>();
+    T* cur_Q = fprop_softmax_tensor_.template data<T>();
 
     // gradient respect to input B     matmul(A^T, C)
     HCTR_LIB_THROW(cublasGemmStridedBatchedEx(
@@ -452,7 +452,7 @@ void MultiHeadAttentionLayer<T>::bprop() {
   } else {
     softmax_layer_->bprop();
   }
-  score = attention_score_4d_.data<T>();
+  score = attention_score_4d_.template data<T>();
 
   /* 3. bgemm
      input: attention_score_4d_
@@ -475,7 +475,7 @@ void MultiHeadAttentionLayer<T>::bprop() {
         n, stride_a, score, b_type, k, stride_b, &beta, query_buf, c_type, n, stride_c, batch_count,
         compute_type, algo));
     // a copy of query_buf
-    T* cur_Q = fprop_query_tensor_.data<T>();
+    T* cur_Q = fprop_query_tensor_.template data<T>();
 
     // gradient respect to input B  matmul(C^T,A)
     HCTR_LIB_THROW(cublasGemmStridedBatchedEx(

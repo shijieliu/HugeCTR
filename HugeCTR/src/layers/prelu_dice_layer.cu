@@ -101,30 +101,30 @@ void PRelu_Dice_Layer<T>::fprop(bool is_train) {
 
   // Get mean of each batch.
   MLCommon::LinAlg::reduce(
-      E_x_.data<T>(), input_tensor.data<T>(), hiddensize, batchsize, T(0), true, false,
-      get_gpu().get_stream(), false, [] __device__(T in, int i) { return in; },
+      E_x_.template data<T>(), input_tensor.template data<T>(), hiddensize, batchsize, T(0), true,
+      false, get_gpu().get_stream(), false, [] __device__(T in, int i) { return in; },
       [] __device__(T a, T b) { return a + b; },
       [batchsize] __device__(T out) { return out / batchsize; });
 
   // Get Variance of each batch. Var_x = E(x^2) - E(x)^2;
   // E(x^2);
   MLCommon::LinAlg::reduce(
-      E_x2_.data<T>(), input_tensor.data<T>(), hiddensize, batchsize, T(0), true, false,
-      get_gpu().get_stream(), false, [] __device__(T in, int i) { return pow(in, 2.0); },
+      E_x2_.template data<T>(), input_tensor.template data<T>(), hiddensize, batchsize, T(0), true,
+      false, get_gpu().get_stream(), false, [] __device__(T in, int i) { return pow(in, 2.0); },
       [] __device__(T a, T b) { return a + b; },
       [batchsize] __device__(T out) { return out / batchsize; });
   // E(x)^2;
   MLCommon::LinAlg::unaryOp(
-      Var_x_.data<T>(), E_x_.data<T>(), hiddensize, [] __device__(T in) { return pow(in, 2.0); },
-      get_gpu().get_stream());
+      Var_x_.template data<T>(), E_x_.template data<T>(), hiddensize,
+      [] __device__(T in) { return pow(in, 2.0); }, get_gpu().get_stream());
   // Var_x = E(x^2) - E(x)^2;
   MLCommon::LinAlg::binaryOp(
-      Var_x_.data<T>(), E_x2_.data<T>(), Var_x_.data<T>(), hiddensize,
+      Var_x_.template data<T>(), E_x2_.template data<T>(), Var_x_.template data<T>(), hiddensize,
       [] __device__(T a, T b) { return a - b; }, get_gpu().get_stream());
 
-  Dice_fprop(output_tensor.data<T>(), input_tensor.data<T>(), E_x_.data<T>(), Var_x_.data<T>(),
-             alpha, epsilon, input_tensor_shape.size(0), input_tensor_shape.size(1),
-             get_gpu().get_stream());
+  Dice_fprop(output_tensor.template data<T>(), input_tensor.template data<T>(),
+             E_x_.template data<T>(), Var_x_.template data<T>(), alpha, epsilon,
+             input_tensor_shape.size(0), input_tensor_shape.size(1), get_gpu().get_stream());
 }
 
 template <typename T>
@@ -137,9 +137,9 @@ void PRelu_Dice_Layer<T>::bprop() {
   T alpha = alpha_;
   T epsilon = epsilon_;
 
-  Dice_bprop(top_tensor.data<T>(), bottom_tensor.data<T>(), E_x_.data<T>(), Var_x_.data<T>(), alpha,
-             epsilon, bottom_tensor_shape.size(0), bottom_tensor_shape.size(1),
-             get_gpu().get_stream());
+  Dice_bprop(top_tensor.template data<T>(), bottom_tensor.template data<T>(),
+             E_x_.template data<T>(), Var_x_.template data<T>(), alpha, epsilon,
+             bottom_tensor_shape.size(0), bottom_tensor_shape.size(1), get_gpu().get_stream());
 }
 
 template class PRelu_Dice_Layer<float>;

@@ -84,9 +84,9 @@ void core23_fused_reshape_concat_general_test(int64_t batch_size, int64_t slot_n
   fused_reshape_concat_general_layer.initialize();
   std::unique_ptr<T *[]> h_d_ins(new T *[num]);
   for (int i = 0; i < num; i++) {
-    h_d_ins[i] = in_tensors[i].data<T>();
+    h_d_ins[i] = in_tensors[i].template data<T>();
   }
-  T *d_out = out_tensor.data<T>();
+  T *d_out = out_tensor.template data<T>();
 
   std::unique_ptr<T *[]> h_ins(new T *[num]);
   for (int i = 0; i < num; i++) {

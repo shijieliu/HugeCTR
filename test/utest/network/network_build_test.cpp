@@ -71,9 +71,9 @@ add_layers(std::shared_ptr<GPUResource> gpu, core23::Tensor& label_tensor, core2
   }
 
   auto weight_tensors = get_trainable_tensor_vector<float>(
-      train_layers, [](auto& layer) -> auto{ return layer->get_weights(); });
+      train_layers, [](auto& layer) -> auto { return layer->get_weights(); });
   auto wgrad_tensors = get_trainable_tensor_vector<float>(
-      train_layers, [](auto& layer) -> auto{ return layer->get_wgrads(); });
+      train_layers, [](auto& layer) -> auto { return layer->get_wgrads(); });
 
   auto regularizer = create_regularizer<float>(false, Regularizer_t::None, 0.01f, weight_tensors,
                                                wgrad_tensors, batch_size, gpu);
@@ -97,12 +97,12 @@ void initialize_label_and_input(core23::Tensor& label_tensor, core23::Tensor& in
 
   CudaDeviceContext context(label_tensor.device().index());
   core23::CUDAStream stream;
-  core23::convert_async<float, int>(label_tensor.data<float>(), h_label.data(),
+  core23::convert_async<float, int>(label_tensor.template data<float>(), h_label.data(),
                                     label_tensor.num_elements(), label_tensor.device(),
                                     core23::DeviceType::CPU, stream);
   core23::CURANDGenerator generator(input_tensor.device());
-  core23::normal_async<float>(input_tensor.data<float>(), input_tensor.num_elements(), 0.f, 1.f,
-                              input_tensor.device(), generator, stream);
+  core23::normal_async<float>(input_tensor.template data<float>(), input_tensor.num_elements(), 0.f,
+                              1.f, input_tensor.device(), generator, stream);
   HCTR_LIB_THROW(cudaStreamSynchronize(stream()));
 }
 
@@ -154,10 +154,10 @@ void network_build_test() {
         add_layers<T>(gpu, evaluate_label_tensor, evaluate_tensor0, batch_size, width, scaler);
 
     auto weight_tensors = get_trainable_tensor_vector<float>(
-        train_layers, [](auto& layer) -> auto{ return layer->get_weights(); });
+        train_layers, [](auto& layer) -> auto { return layer->get_weights(); });
     auto weight_half_tensors = std::vector<core23::Tensor>();
     auto wgrad_tensors = get_trainable_tensor_vector<float>(
-        train_layers, [](auto& layer) -> auto{ return layer->get_wgrads(); });
+        train_layers, [](auto& layer) -> auto { return layer->get_wgrads(); });
 
     std::map<std::string, float> label_weights;
     for (auto& pair : train_losses) {

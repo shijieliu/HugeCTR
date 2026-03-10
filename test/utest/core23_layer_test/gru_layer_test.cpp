@@ -31,7 +31,7 @@ using namespace HugeCTR;
 
 namespace {
 
-//#define KERAS_CHECK
+// #define KERAS_CHECK
 template <typename T>
 static bool check_cpu_gpu(T *cpu_p, T *gpu_p, int64_t len) {
   T *cpu_tmp = (T *)malloc(sizeof(T) * len);
@@ -267,11 +267,11 @@ static void gru_layer_test(int64_t batch_size, int64_t hiddenSize, int64_t embed
   std::unique_ptr<T[]> h_dhy(new T[test::align_to_even(hiddenTensorSize)]);
   std::unique_ptr<T[]> h_dweight(new T[test::align_to_even(weightSpaceSize)]);
 // std::unique_ptr<T[]> h_bias(new T[test::align_to_even(m)]);
-//#define RAND
-//#define CUSTOMIZE
-//#define RAND_WEIGHT
+// #define RAND
+// #define CUSTOMIZE
+// #define RAND_WEIGHT
 #define UNIFORM
-//#define NORMAL
+// #define NORMAL
 #ifdef RAND
   test::GaussianDataSimulator simulator(0.0f, 1.0f);
   simulator.fill(h_weight.get(), test::align_to_even(weightSpaceSize));
@@ -378,7 +378,7 @@ static void gru_layer_test(int64_t batch_size, int64_t hiddenSize, int64_t embed
   HCTR_PRINT(INFO, "\n");
 #endif
 
-  //#define CUDNNTEST
+  // #define CUDNNTEST
 
   T *C_in, *C_weight, *C_y;
   bool result;

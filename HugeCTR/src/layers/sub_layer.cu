@@ -94,23 +94,23 @@ template <typename T>
 void SubLayer<T>::fprop(bool is_train) {
   CudaDeviceContext context(get_device_id());
 
-  T* output = output_tensors_[0].data<T>();
+  T* output = output_tensors_[0].template data<T>();
 
   dim3 block_size(256, 1, 1);
   dim3 grid_size((size_ + block_size.x - 1) / block_size.x, 1, 1);
-  sub_kernel<<<grid_size, block_size, 0, get_gpu().get_stream()>>>(input_tensor_ptr_.data<T*>(),
-                                                                   output, size_);
+  sub_kernel<<<grid_size, block_size, 0, get_gpu().get_stream()>>>(
+      input_tensor_ptr_.template data<T*>(), output, size_);
 }
 
 template <typename T>
 void SubLayer<T>::bprop() {
   CudaDeviceContext context(get_device_id());
 
-  T* output = output_tensors_[0].data<T>();
+  T* output = output_tensors_[0].template data<T>();
   dim3 block_size(256, 1, 1);
   dim3 grid_size((size_ + block_size.x - 1) / block_size.x, 1, 1);
   sub_dgrad_kernel<<<grid_size, block_size, 0, get_gpu().get_stream()>>>(
-      output, input_tensor_ptr_.data<T*>(), size_);
+      output, input_tensor_ptr_.template data<T*>(), size_);
 }
 
 template class SubLayer<float>;

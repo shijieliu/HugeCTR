@@ -104,10 +104,10 @@ void FullyConnectedLayer<float>::fprop(bool is_train) {
   core23::Tensor& in_tensor = get_in_tensors(is_train)[0];
   core23::Tensor& out_tensor = this->output_tensors_[0];
 
-  float* weight = this->get_weight(0).data<float>();
-  float* bias = this->get_weight(1).data<float>();
-  float* in = in_tensor.data<float>();
-  float* out = out_tensor.data<float>();
+  float* weight = this->get_weight(0).template data<float>();
+  float* bias = this->get_weight(1).template data<float>();
+  float* in = in_tensor.template data<float>();
+  float* out = out_tensor.template data<float>();
 
   const auto& in_tensor_dim = in_tensor.shape();
   const auto& out_tensor_dim = out_tensor.shape();
@@ -138,11 +138,11 @@ void FullyConnectedLayer<float>::bprop() {
   core23::Tensor& in_tensor = get_in_tensors(true)[0];
   core23::Tensor& out_tensor = this->output_tensors_[0];
 
-  float* wgrad = this->get_wgrad(0).data<float>();
-  float* bias_grad = this->get_wgrad(1).data<float>();
-  float* weight = this->get_weight(0).data<float>();
-  float* in = in_tensor.data<float>();
-  float* out = out_tensor.data<float>();
+  float* wgrad = this->get_wgrad(0).template data<float>();
+  float* bias_grad = this->get_wgrad(1).template data<float>();
+  float* weight = this->get_weight(0).template data<float>();
+  float* in = in_tensor.template data<float>();
+  float* out = out_tensor.template data<float>();
 
   const auto& in_tensor_dim = in_tensor.shape();
   const auto& out_tensor_dim = out_tensor.shape();
@@ -183,10 +183,10 @@ void FullyConnectedLayer<float>::search_algorithm() {
   // Device Tensors to be used
   core23::Tensor& in_tensor = get_in_tensors(true)[0];
   core23::Tensor& out_tensor = output_tensors_[0];
-  float* weight = this->get_weight(0).data<float>();
-  float* in = in_tensor.data<float>();
-  float* out = out_tensor.data<float>();
-  float* wgrad = this->get_wgrad(0).data<float>();
+  float* weight = this->get_weight(0).template data<float>();
+  float* in = in_tensor.template data<float>();
+  float* out = out_tensor.template data<float>();
+  float* wgrad = this->get_wgrad(0).template data<float>();
 
   // Tensor dim
   const auto& in_tensor_dim = in_tensor.shape();

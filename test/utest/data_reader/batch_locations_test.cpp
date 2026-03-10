@@ -20,7 +20,7 @@
 
 using namespace HugeCTR;
 
-//#define round_up(x, y) ((((x) + ((y) - 1)) / (y)) * (y))
+// #define round_up(x, y) ((((x) + ((y) - 1)) / (y)) * (y))
 
 TEST(static_batch_locations, single_thread) {
   size_t num_batches = 51;

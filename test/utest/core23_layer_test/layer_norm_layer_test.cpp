@@ -232,8 +232,8 @@ void layer_norm_test(core23::Shape dims) {
 
   cout << "Batch_size: " << batch_size << " Num_feature: " << num_feature << endl;
 
-  T* d_in = in_tensor.data<T>();
-  T* d_out = out_tensor.data<T>();
+  T* d_in = in_tensor.template data<T>();
+  T* d_out = out_tensor.template data<T>();
 
   std::unique_ptr<T[]> h_gamma(new T[num_feature]);
   std::unique_ptr<T[]> h_beta(new T[num_feature]);

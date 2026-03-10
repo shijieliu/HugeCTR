@@ -56,14 +56,15 @@ __global__ void copy_to_float_bufer(const EmbType *data, float *dst_data, int ev
 void copy_float_emb_vec_ptrs_data(const core23::Tensor &float_emb_vec_ptrs, core23::Tensor &data,
                                   size_t num_keys, int vec_size, cudaStream_t stream) {
   copy_float_emb_vec_ptrs_data_kernel<<<num_keys * vec_size / 256 + 1, 256, 0, stream>>>(
-      (const float **)float_emb_vec_ptrs.data(), data.data<float>(), num_keys, vec_size);
+      (const float **)float_emb_vec_ptrs.data(), data.template data<float>(), num_keys, vec_size);
 }
 
 void combiner_func(const CombinerData &combiner_data, core23::Tensor &data, cudaStream_t stream) {
   combiner_kernel<<<combiner_data.num_bucket * combiner_data.max_ev_size / 256 + 1, 256, 0,
-                    stream>>>(data.data<float>(), combiner_data.combiner_division.data<int>(),
-                              combiner_data.ev_start_indices.data<int>(),
-                              combiner_data.ev_size.data<int>(), combiner_data.num_bucket,
+                    stream>>>(data.template data<float>(),
+                              combiner_data.combiner_division.template data<int>(),
+                              combiner_data.ev_start_indices.template data<int>(),
+                              combiner_data.ev_size.template data<int>(), combiner_data.num_bucket,
                               combiner_data.max_ev_size);
 }
 
@@ -71,6 +72,7 @@ void copy_to_float_bufer(const core23::Tensor &data, core23::Tensor &float_buffe
                          int ev_start_indices, cudaStream_t stream) {
   DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(data.data_type().type(), EmbType, [&] {
     copy_to_float_bufer<<<data.num_elements() / 256 + 1, 256, 0, stream>>>(
-        data.data<EmbType>(), float_buffer.data<float>(), ev_start_indices, data.num_elements());
+        data.template data<EmbType>(), float_buffer.template data<float>(), ev_start_indices,
+        data.num_elements());
   });
 }

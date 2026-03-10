@@ -435,13 +435,16 @@ void LabelAndCountKeysOperator::operator()(const DataDistributionInput& input,
       kernels::label_and_count_keys<<<grid, block, smem_bytes, stream>>>(
           input.get_dp_keys_pointer_ptr<KeyType>(),
           input.get_dp_bucket_range_pointer_ptr<BucketRangeType>(),
-          (const int*)lookup_bucket_threads.data<int>(), (const int*)lookup_ids.data<int>(),
-          (const int*)lookup_num_gpus.data<int>(), (const int*)lookup_gpu_ids.data<int>(),
-          (const int*)hotness_bucket_range.data<int>(),
-          (const uint32_t*)gpu_lookup_range.data<uint32_t>(), output.flat_keys.data<KeyType>(),
-          output.local_labels.data<uint32_t>(), output.keys_per_gpu.data<BucketRangeType>(),
-          output.keys_per_bucket.data<BucketRangeType>(), batch_size_per_gpu_, global_gpu_count_,
-          global_gpu_id_, input.num_lookup_);
+          (const int*)lookup_bucket_threads.template data<int>(),
+          (const int*)lookup_ids.template data<int>(),
+          (const int*)lookup_num_gpus.template data<int>(),
+          (const int*)lookup_gpu_ids.template data<int>(),
+          (const int*)hotness_bucket_range.template data<int>(),
+          (const uint32_t*)gpu_lookup_range.template data<uint32_t>(),
+          output.flat_keys.template data<KeyType>(), output.local_labels.template data<uint32_t>(),
+          output.keys_per_gpu.template data<BucketRangeType>(),
+          output.keys_per_bucket.template data<BucketRangeType>(), batch_size_per_gpu_,
+          global_gpu_count_, global_gpu_id_, input.num_lookup_);
     });
   });
 
@@ -519,8 +522,8 @@ void CountKeysOperator::operator()(core23::Tensor keys_per_bucket_gpu_major,
   DISPATCH_INTEGRAL_FUNCTION_CORE23(
       keys_per_bucket_gpu_major.data_type().type(), BucketRangeType, [&] {
         kernels::count_keys_per_gpu<<<grid, block, sizeof(BucketRangeType), stream>>>(
-            keys_per_bucket_gpu_major.data<BucketRangeType>(),
-            result_keys_per_gpu.data<BucketRangeType>(), num_buckets_per_dev,
+            keys_per_bucket_gpu_major.template data<BucketRangeType>(),
+            result_keys_per_gpu.template data<BucketRangeType>(), num_buckets_per_dev,
             num_buckets_per_dev_padded);
       });
   HCTR_LIB_THROW(cudaGetLastError());
@@ -548,8 +551,9 @@ void TransposeBucketsOperator::operator()(core23::Tensor buckets_gpu_major,
 
   DISPATCH_INTEGRAL_FUNCTION_CORE23(buckets_gpu_major.data_type().type(), BucketRangeType, [&] {
     kernels::transpose_buckets<<<grid, block, 0, stream>>>(
-        buckets_gpu_major.data<BucketRangeType>(), buckets_feat_major.data<BucketRangeType>(),
-        global_gpu_count_, num_shards_, batch_size_per_gpu_);
+        buckets_gpu_major.template data<BucketRangeType>(),
+        buckets_feat_major.template data<BucketRangeType>(), global_gpu_count_, num_shards_,
+        batch_size_per_gpu_);
   });
   HCTR_LIB_THROW(cudaGetLastError());
 }
@@ -591,8 +595,9 @@ void SwizzleKeysOperator::operator()(core23::Tensor src_bucket_range,
   DISPATCH_INTEGRAL_FUNCTION_CORE23(keys.data_type().type(), KeyType, [&] {
     DISPATCH_INTEGRAL_FUNCTION_CORE23(src_bucket_range.data_type().type(), BucketRangeType, [&] {
       kernels::swizzle_keys<<<grid, block, 0, stream>>>(
-          src_bucket_range.data<BucketRangeType>(), dst_bucket_range.data<BucketRangeType>(),
-          keys.data<KeyType>(), result_keys.data<KeyType>(), shard_bucket_threads_.data<int>(),
+          src_bucket_range.template data<BucketRangeType>(),
+          dst_bucket_range.template data<BucketRangeType>(), keys.template data<KeyType>(),
+          result_keys.template data<KeyType>(), shard_bucket_threads_.template data<int>(),
           batch_size_per_gpu_, num_shards_, global_gpu_count_);
     });
   });
@@ -643,8 +648,8 @@ void ComputeDPBucketRangeOperator::operator()(std::vector<core23::Tensor> dp_buc
 
   DISPATCH_INTEGRAL_FUNCTION_CORE23(dp_bucket_ranges[0].data_type().type(), BucketRangeType, [&] {
     kernels::compute_bucket_ranges_with_padding<<<grid, block, 0, stream>>>(
-        d_ptrs_.data<BucketRangeType*>(), keys_per_bucket.data<BucketRangeType>(),
-        max_hotnesses_.data<int>(), num_valid_samples, batch_size_per_gpu_);
+        d_ptrs_.template data<BucketRangeType*>(), keys_per_bucket.template data<BucketRangeType>(),
+        max_hotnesses_.template data<int>(), num_valid_samples, batch_size_per_gpu_);
   });
 
   HCTR_LIB_THROW(cudaGetLastError());
@@ -697,8 +702,9 @@ void ConcatKeysAndBucketRangeOperator::operator()(const DataDistributionInput& i
     int num_shards_padded = ((num_shards + block_dim - 1) / block_dim) * block_dim;
 
     kernels::compute_shard_ranges<block_dim><<<1, block_dim, 0, stream>>>(
-        shard_ranges_.data<uint32_t>(), input.get_dp_bucket_range_pointer_ptr<BucketRangeType>(),
-        d_shard_ids_.data<int>(), num_shards, num_shards_padded, batch_size_per_gpu_);
+        shard_ranges_.template data<uint32_t>(),
+        input.get_dp_bucket_range_pointer_ptr<BucketRangeType>(), d_shard_ids_.template data<int>(),
+        num_shards, num_shards_padded, batch_size_per_gpu_);
   });
   HCTR_LIB_THROW(cudaGetLastError());
 
@@ -708,10 +714,12 @@ void ConcatKeysAndBucketRangeOperator::operator()(const DataDistributionInput& i
       dim3 grid((batch_size_per_gpu_ + block.x - 1) / block.x, num_shards);
 
       kernels::concat_keys_and_bucket_range<<<grid, block, 0, stream>>>(
-          result_keys.data<KeyType>(), result_bucket_range.data<BucketRangeType>(),
+          result_keys.template data<KeyType>(),
+          result_bucket_range.template data<BucketRangeType>(),
           input.get_dp_keys_pointer_ptr<KeyType>(),
-          input.get_dp_bucket_range_pointer_ptr<BucketRangeType>(), d_shard_ids_.data<int>(),
-          shard_ranges_.data<uint32_t>(), shard_bucket_threads_.data<int>(), batch_size_per_gpu_);
+          input.get_dp_bucket_range_pointer_ptr<BucketRangeType>(),
+          d_shard_ids_.template data<int>(), shard_ranges_.template data<uint32_t>(),
+          shard_bucket_threads_.template data<int>(), batch_size_per_gpu_);
     });
   });
   HCTR_LIB_THROW(cudaGetLastError());

@@ -192,7 +192,7 @@ class DynamicEmbeddingTableCPU final : public IDynamicEmbeddingTable {
 
     std::vector<float*> w_dev;
     w_dev.resize(k.size());
-    HCTR_LIB_THROW(cudaMemcpy(w_dev.data(), embedding_vec.data<float*>(),
+    HCTR_LIB_THROW(cudaMemcpy(w_dev.data(), embedding_vec.template data<float*>(),
                               w_dev.size() * sizeof(float*), cudaMemcpyDeviceToHost));
 
     // Perform actual lookup.

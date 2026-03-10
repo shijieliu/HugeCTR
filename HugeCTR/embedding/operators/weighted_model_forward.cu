@@ -38,12 +38,12 @@ void WeightedModelForward::compute(const core23::Tensor &mp_ev, const core23::Te
   if (num_local_embedding_ > 0) {
     DISPATCH_INTEGRAL_FUNCTION_CORE23(model_offset.data_type().type(), offset_t, [&] {
       DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(model_comm_buffer.data_type().type(), emb_t, [&] {
-        const offset_t *model_offset_ptr = model_offset.data<offset_t>();
-        const int *d_local_ev_size_list_ptr = d_local_ev_size_list.data<int>();
-        const int *d_local_ev_size_offset_ptr = d_local_ev_size_offset.data<int>();
+        const offset_t *model_offset_ptr = model_offset.template data<offset_t>();
+        const int *d_local_ev_size_list_ptr = d_local_ev_size_list.template data<int>();
+        const int *d_local_ev_size_offset_ptr = d_local_ev_size_offset.template data<int>();
         const float **mp_ev_ptr = static_cast<const float **>(mp_ev.data());
         emb_t **model_comm_buffer_ptr = static_cast<emb_t **>(model_comm_buffer.data());
-        const float *sp_weight_ptr = sp_weight.data<float>();
+        const float *sp_weight_ptr = sp_weight.template data<float>();
 
         auto multi_to_one_desc = make_MultiToOneWeight<float, emb_t>(
             batch_size * num_local_embedding_,

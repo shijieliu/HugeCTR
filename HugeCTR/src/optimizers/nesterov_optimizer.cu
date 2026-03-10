@@ -72,7 +72,7 @@ void NesterovOptimizer<T>::update() {
   float* weight = flat_weight_tensor.data();
   const T* wgrad = flat_wgrad_tensor.data();
   auto len = flat_weight_tensor.size(0);
-  float* accum = accum_tensor_.data<float>();
+  float* accum = accum_tensor_.template data<float>();
   const size_t grid_dim = (len - 1) / block_dim + 1;
   nesterov_update_kernel<<<grid_dim, block_dim, 0, gpu_resource_->get_stream()>>>(
       len, weight, accum, wgrad, lr_, mu_, scaler_);

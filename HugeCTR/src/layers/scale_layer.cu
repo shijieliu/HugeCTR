@@ -108,8 +108,8 @@ void ScaleLayer<T>::fprop(bool is_train) {
   int axis = axis_;
   int factor = factor_;
 
-  scale(out_tensor.data<T>(), in_tensor.data<T>(), in_tensor_dim[0], in_tensor_dim[1], axis, factor,
-        get_gpu().get_stream(), true);
+  scale(out_tensor.template data<T>(), in_tensor.template data<T>(), in_tensor_dim[0],
+        in_tensor_dim[1], axis, factor, get_gpu().get_stream(), true);
 }
 
 template <typename T>
@@ -121,8 +121,8 @@ void ScaleLayer<T>::bprop() {
   int axis = axis_;
   int factor = factor_;
 
-  scale(bottom_tensor.data<T>(), top_tensor.data<T>(), bottom_tensor_dim[0], bottom_tensor_dim[1],
-        axis, factor, get_gpu().get_stream(), false);
+  scale(bottom_tensor.template data<T>(), top_tensor.template data<T>(), bottom_tensor_dim[0],
+        bottom_tensor_dim[1], axis, factor, get_gpu().get_stream(), false);
 }
 
 template class ScaleLayer<float>;

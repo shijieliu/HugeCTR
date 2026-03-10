@@ -44,10 +44,10 @@ void fill_test_impl(Device device, bool async) {
 
   if (async) {
     CUDAStream stream(cudaStreamDefault, 0);
-    fill_async<int>(tensor.data<int>(), tensor.num_elements(), val, device, stream);
+    fill_async<int>(tensor.template data<int>(), tensor.num_elements(), val, device, stream);
     HCTR_LIB_THROW(cudaStreamSynchronize(stream()));
   } else {
-    fill_sync<int>(tensor.data<int>(), tensor.num_elements(), val, device);
+    fill_sync<int>(tensor.template data<int>(), tensor.num_elements(), val, device);
   }
 
   std::vector<int> h_out(tensor.num_elements());
@@ -103,8 +103,9 @@ void convert_test_impl(Device dst_device, Device src_device) {
   copy_sync(src_tensor.data(), h_src.data(), src_tensor.num_bytes(), src_device, DeviceType::CPU);
 
   CUDAStream stream(cudaStreamDefault, 0);
-  convert_async<DstType, SrcType>(dst_tensor.data<DstType>(), src_tensor.data<SrcType>(),
-                                  src_tensor.num_elements(), dst_device, src_device, stream);
+  convert_async<DstType, SrcType>(dst_tensor.template data<DstType>(),
+                                  src_tensor.template data<SrcType>(), src_tensor.num_elements(),
+                                  dst_device, src_device, stream);
   HCTR_LIB_THROW(cudaStreamSynchronize(stream()));
 
   std::vector<DstType> h_dst(dst_tensor.num_elements());
@@ -143,24 +144,24 @@ void random_test_common_impl(Device device, TestRandomType type) {
   if (type == TestRandomType::Uniform) {
     mean_in = (b + a) / TypeConverter<Type, float>::value(2.f);
     stddev_in = std::sqrt((b - a) * (b - a) / TypeConverter<Type, float>::value(12.f));
-    uniform_async<Type>(tensor.data<Type>(), tensor.num_elements(), a, b, device, generator,
-                        stream);
+    uniform_async<Type>(tensor.template data<Type>(), tensor.num_elements(), a, b, device,
+                        generator, stream);
     cudaStreamSynchronize(stream());
   } else if (type == TestRandomType::Normal) {
     mean_in = TypeConverter<Type, float>::value(0.f);
     stddev_in = TypeConverter<Type, float>::value(0.05f);
-    normal_async<Type>(tensor.data<Type>(), tensor.num_elements(), mean_in, stddev_in, device,
-                       generator, stream);
+    normal_async<Type>(tensor.template data<Type>(), tensor.num_elements(), mean_in, stddev_in,
+                       device, generator, stream);
   } else if (type == TestRandomType::XavierUniform) {
     mean_in = TypeConverter<Type, float>::value(0.f);
     stddev_in = TypeConverter<Type, float>::value(0.f);
-    xavier_uniform_async<Type>(tensor.data<Type>(), tensor.num_elements(), fan_in, fan_out, device,
-                               generator, stream);
+    xavier_uniform_async<Type>(tensor.template data<Type>(), tensor.num_elements(), fan_in, fan_out,
+                               device, generator, stream);
   } else if (type == TestRandomType::XavierNormal) {
     mean_in = TypeConverter<Type, float>::value(0.f);
     stddev_in = TypeConverter<Type, float>::value(std::sqrt(2.f / (fan_in + fan_out)));
-    xavier_normal_async<Type>(tensor.data<Type>(), tensor.num_elements(), fan_in, fan_out, device,
-                              generator, stream);
+    xavier_normal_async<Type>(tensor.template data<Type>(), tensor.num_elements(), fan_in, fan_out,
+                              device, generator, stream);
   }
   cudaStreamSynchronize(stream());
 

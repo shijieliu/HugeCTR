@@ -113,14 +113,14 @@ void MLPLayer<T>::fprop(bool is_train) {
   CudaDeviceContext context(this->get_device_id());
   int num_layers = num_outputs_.size();
   for (int i = 0; i < num_layers; i++) {
-    const T* kernel = kernels_[i].data<T>();
-    const T* bottom =
-        i == 0 ? this->input_tensors_[0].template data<T>() : train_tensors_[i - 1].data<T>();
-    T* top_fprop = train_tensors_[i].data<T>();
+    const T* kernel = kernels_[i].template data<T>();
+    const T* bottom = i == 0 ? this->input_tensors_[0].template data<T>()
+                             : train_tensors_[i - 1].template data<T>();
+    T* top_fprop = train_tensors_[i].template data<T>();
     layer_functors_.fprop(kernel, bottom, top_fprop, layer_desc_[i], layer_algo_[i],
                           this->get_gpu().get_cublaslt_handle(), this->get_gpu().get_stream());
     if (i == num_layers - 1 && acts_[i] == Activation_t::Relu) {
-      T* mask_out = mask_tensors_[i].data<T>();
+      T* mask_out = mask_tensors_[i].template data<T>();
       int64_t len = train_tensors_[i].num_elements();
       HCTR_LIB_THROW(cudaMemcpyAsync(mask_out, top_fprop, len * sizeof(T), cudaMemcpyDeviceToDevice,
                                      this->get_gpu().get_stream()));
@@ -139,24 +139,24 @@ void MLPLayer<T>::bprop() {
     int64_t batch_size = bottom_tensor_dim.size(0);
     int64_t top_size = num_outputs_[i];
 
-    const T* kernel = kernels_[i].data<T>();
-    const T* train_top = train_tensors_[i].data<T>();
+    const T* kernel = kernels_[i].template data<T>();
+    const T* train_top = train_tensors_[i].template data<T>();
 
     // Only the last layer needs the mask of itself to get the grad.
     const T* mask_top = (i == num_layers - 1 && acts_[i] == Activation_t::Relu)
-                            ? mask_tensors_[i].data<T>()
+                            ? mask_tensors_[i].template data<T>()
                             : nullptr;
 
-    T* grad_top =
-        acts_[i] == Activation_t::None ? train_tensors_[i].data<T>() : dact_tensors_[i].data<T>();
-    T* kernel_grad = kernels_grad_[i].data<T>();
-    T* bottom =
-        i == 0 ? this->input_tensors_[0].template data<T>() : train_tensors_[i - 1].data<T>();
+    T* grad_top = acts_[i] == Activation_t::None ? train_tensors_[i].template data<T>()
+                                                 : dact_tensors_[i].template data<T>();
+    T* kernel_grad = kernels_grad_[i].template data<T>();
+    T* bottom = i == 0 ? this->input_tensors_[0].template data<T>()
+                       : train_tensors_[i - 1].template data<T>();
     bool enable_async_wgrad = async_wgrad_;
     T* bottom_bprop = nullptr;
     if (i != 0) {
-      bottom_bprop = acts_[i - 1] == Activation_t::None ? train_tensors_[i - 1].data<T>()
-                                                        : dact_tensors_[i - 1].data<T>();
+      bottom_bprop = acts_[i - 1] == Activation_t::None ? train_tensors_[i - 1].template data<T>()
+                                                        : dact_tensors_[i - 1].template data<T>();
     } else {
       if (this->input_tensors_.size() == 1) {
         // train_in_tensor
@@ -196,13 +196,13 @@ void MLPLayer<T>::initialize() {
 
     const T* bias_ptr = nullptr;
     if (use_bias_[i]) {
-      bias_ptr = biases_[i].data<T>();
+      bias_ptr = biases_[i].template data<T>();
     }
 
     T* mask_out_ptr = nullptr;
     bool output_mask = output_mask_[i];
     if (output_mask) {
-      mask_out_ptr = mask_tensors_[i].data<T>();
+      mask_out_ptr = mask_tensors_[i].template data<T>();
     }
     layer_desc_[i].set_fprop_attr(bias_ptr, acts_[i], mask_out_ptr, batch_size, input_size,
                                   output_size, enable_tf32_compute_);
@@ -210,7 +210,7 @@ void MLPLayer<T>::initialize() {
     T* mask_in_ptr = nullptr;
     if (i > 0) {
       if (acts_[i - 1] == Activation_t::Relu) {
-        mask_in_ptr = mask_tensors_[i - 1].data<T>();
+        mask_in_ptr = mask_tensors_[i - 1].template data<T>();
       }
     }
     T* dbias_bottom_ptr = nullptr;
@@ -219,13 +219,13 @@ void MLPLayer<T>::initialize() {
     // Compute the bias gradient for this layer.
     if (fuse_wb_ || i == num_layers - 1 || acts_[i] == Activation_t::None) {
       if (use_bias_[i]) {
-        dbias_top_ptr = db_tensors_[i].data<T>();
+        dbias_top_ptr = db_tensors_[i].template data<T>();
       }
     }
     // Compute the bias gradient for bottom layer. For the last layer of MLP, it should compute both
     // gradients.
     if (!fuse_wb_ && i > 0 && use_bias_[i - 1] && acts_[i - 1] != Activation_t::None) {
-      dbias_bottom_ptr = db_tensors_[i - 1].data<T>();
+      dbias_bottom_ptr = db_tensors_[i - 1].template data<T>();
     }
     layer_desc_[i].set_bprop_attr(dbias_bottom_ptr, dbias_top_ptr, mask_in_ptr, batch_size,
                                   input_size, output_size, enable_tf32_compute_);
@@ -239,10 +239,10 @@ void MLPLayer<T>::search_algorithm() {
   CudaDeviceContext context(this->get_device_id());
   int num_layers = num_outputs_.size();
   for (int i = 0; i < num_layers; i++) {
-    T* kernel = kernels_[i].data<T>();
-    T* bottom =
-        i == 0 ? this->input_tensors_[0].template data<T>() : train_tensors_[i - 1].data<T>();
-    T* top = train_tensors_[i].data<T>();
+    T* kernel = kernels_[i].template data<T>();
+    T* bottom = i == 0 ? this->input_tensors_[0].template data<T>()
+                       : train_tensors_[i - 1].template data<T>();
+    T* top = train_tensors_[i].template data<T>();
 
     const auto& bottom_tensor_dim =
         i == 0 ? this->input_tensors_[0].shape() : train_tensors_[i - 1].shape();

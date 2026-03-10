@@ -85,7 +85,7 @@ void ReshapeLayerV2<T>::fprop(bool is_train) {
   core23::Tensor& input_tensor = input_tensors_[0];
   core23::Tensor& output_tensor = output_tensors_[0];
 
-  HCTR_LIB_THROW(cudaMemcpyAsync(output_tensor.data<T>(), input_tensor.data<T>(),
+  HCTR_LIB_THROW(cudaMemcpyAsync(output_tensor.template data<T>(), input_tensor.template data<T>(),
                                  input_tensor.num_bytes(), cudaMemcpyDeviceToDevice,
                                  get_gpu().get_stream()));
 }
@@ -95,7 +95,7 @@ void ReshapeLayerV2<T>::bprop() {
   core23::Tensor& input_tensor = input_tensors_[0];
   core23::Tensor& output_tensor = output_tensors_[0];
 
-  HCTR_LIB_THROW(cudaMemcpyAsync(input_tensor.data<T>(), output_tensor.data<T>(),
+  HCTR_LIB_THROW(cudaMemcpyAsync(input_tensor.template data<T>(), output_tensor.template data<T>(),
                                  output_tensor.num_bytes(), cudaMemcpyDeviceToDevice,
                                  get_gpu().get_stream()));
 }

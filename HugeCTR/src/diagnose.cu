@@ -109,8 +109,8 @@ void verify_and_histogram(const char* category, const Tensor2<T>& tensor,
   HCTR_LIB_THROW(cudaStreamSynchronize(stream));
 
   HCTR_LOG_S(INFO, ROOT) << "Diagnose for (" << category << "), Histogram [" << h_array[0] << ", "
-                         << h_array[1] << "]"
-                         << ", [" << h_array[2] << ", " << h_array[3] << "]" << std::endl;
+                         << h_array[1] << "]" << ", [" << h_array[2] << ", " << h_array[3] << "]"
+                         << std::endl;
 
   if (h_flag != 0) {
     std::ostringstream os;

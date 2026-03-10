@@ -284,9 +284,9 @@ template <>
 void matrix_vec_mul<float>(core23::Tensor& out, const core23::Tensor& mat,
                            const core23::Tensor& vec, cublasHandle_t cublas_handle,
                            cudaStream_t stream) {
-  float* pout = out.data<float>();
-  const float* pmat = mat.data<float>();
-  const float* pvec = vec.data<float>();
+  float* pout = out.template data<float>();
+  const float* pmat = mat.template data<float>();
+  const float* pvec = vec.template data<float>();
 
   const auto& dim = out.shape();
   const auto& idim = mat.shape();
@@ -308,9 +308,9 @@ template <>
 void matrix_vec_mul<__half>(core23::Tensor& out, const core23::Tensor& mat,
                             const core23::Tensor& vec, cublasHandle_t cublas_handle,
                             cudaStream_t stream) {
-  __half* pout = out.data<__half>();
-  const __half* pmat = mat.data<__half>();
-  const __half* pvec = vec.data<__half>();
+  __half* pout = out.template data<__half>();
+  const __half* pmat = mat.template data<__half>();
+  const __half* pvec = vec.template data<__half>();
 
   const auto& dim = out.shape();
   const auto& idim = mat.shape();
@@ -331,9 +331,9 @@ void matrix_vec_mul<__half>(core23::Tensor& out, const core23::Tensor& mat,
 template <typename T>
 void row_scaling(core23::Tensor& o_mat, const core23::Tensor& mat, const core23::Tensor& vec,
                  cudaStream_t stream) {
-  T* pout = o_mat.data<T>();
-  const T* pmat = mat.data<T>();
-  const T* pvec = vec.data<T>();
+  T* pout = o_mat.template data<T>();
+  const T* pmat = mat.template data<T>();
+  const T* pvec = vec.template data<T>();
 
   const auto& dim = o_mat.shape();
   const auto& idim = mat.shape();
@@ -351,9 +351,9 @@ void row_scaling(core23::Tensor& o_mat, const core23::Tensor& mat, const core23:
 template <typename T>
 void matrix_vec_add(core23::Tensor& o_mat, const core23::Tensor& mat, const core23::Tensor& vec,
                     cudaStream_t stream) {
-  T* pout = o_mat.data<T>();
-  const T* pmat = mat.data<T>();
-  const T* pvec = vec.data<T>();
+  T* pout = o_mat.template data<T>();
+  const T* pmat = mat.template data<T>();
+  const T* pvec = vec.template data<T>();
 
   const auto& dim = o_mat.shape();
   const auto& idim = mat.shape();
@@ -371,9 +371,9 @@ void matrix_vec_add(core23::Tensor& o_mat, const core23::Tensor& mat, const core
 template <typename T>
 void matrix_add(core23::Tensor& out_mat, const core23::Tensor& mat_a, const core23::Tensor& mat_b,
                 cudaStream_t stream) {
-  T* pout = out_mat.data<T>();
-  const T* pmat_a = mat_a.data<T>();
-  const T* pmat_b = mat_b.data<T>();
+  T* pout = out_mat.template data<T>();
+  const T* pmat_a = mat_a.template data<T>();
+  const T* pmat_b = mat_b.template data<T>();
 
   const auto& dim = out_mat.shape();
   const auto& idim1 = mat_a.shape();
@@ -391,11 +391,11 @@ void matrix_add(core23::Tensor& out_mat, const core23::Tensor& mat_a, const core
 template <typename T>
 void fused_mul_fma3(core23::Tensor& Y0, core23::Tensor& Y1, const core23::Tensor& A,
                     const core23::Tensor& B, const core23::Tensor& C, cudaStream_t stream) {
-  const T* pmat_a = A.data<T>();
-  const T* pmat_b = B.data<T>();
-  const T* pmat_c = C.data<T>();
-  T* pmat_o0 = Y0.data<T>();
-  T* pmat_o1 = Y1.data<T>();
+  const T* pmat_a = A.template data<T>();
+  const T* pmat_b = B.template data<T>();
+  const T* pmat_c = C.template data<T>();
+  T* pmat_o0 = Y0.template data<T>();
+  T* pmat_o1 = Y1.template data<T>();
   const auto& idima = A.shape();
   const auto& idimb = B.shape();
   const auto& idimc = C.shape();
@@ -427,10 +427,10 @@ template <typename T>
 void fused_matrix_elementwise_dot_add(core23::Tensor& out_mat, const core23::Tensor& mat_a,
                                       const core23::Tensor& mat_b, const core23::Tensor& mat_c,
                                       cudaStream_t stream) {
-  T* pout = out_mat.data<T>();
-  const T* pmat_a = mat_a.data<T>();
-  const T* pmat_b = mat_b.data<T>();
-  const T* pmat_c = mat_c.data<T>();
+  T* pout = out_mat.template data<T>();
+  const T* pmat_a = mat_a.template data<T>();
+  const T* pmat_b = mat_b.template data<T>();
+  const T* pmat_c = mat_c.template data<T>();
   const auto& dim = out_mat.shape();
   const auto& idima = mat_a.shape();
   const auto& idimb = mat_b.shape();
@@ -466,9 +466,9 @@ void fused_matrix_elementwise_dot_add(core23::Tensor& out_mat, const core23::Ten
 template <typename T>
 void matrix_elementwise_dot(core23::Tensor& out_mat, const core23::Tensor& mat_a,
                             const core23::Tensor& mat_b, cudaStream_t stream) {
-  T* pout = out_mat.data<T>();
-  const T* pmat_a = mat_a.data<T>();
-  const T* pmat_b = mat_b.data<T>();
+  T* pout = out_mat.template data<T>();
+  const T* pmat_a = mat_a.template data<T>();
+  const T* pmat_b = mat_b.template data<T>();
 
   const auto& dim = out_mat.shape();
   const auto& idim1 = mat_a.shape();
@@ -486,9 +486,9 @@ void matrix_elementwise_dot(core23::Tensor& out_mat, const core23::Tensor& mat_a
 template <typename T>
 void matrix_pair_mul(core23::Tensor& o_vec, const core23::Tensor& mat_a,
                      const core23::Tensor& mat_b, cudaStream_t stream) {
-  T* pout = o_vec.data<T>();
-  const T* pmat_a = mat_a.data<T>();
-  const T* pmat_b = mat_b.data<T>();
+  T* pout = o_vec.template data<T>();
+  const T* pmat_a = mat_a.template data<T>();
+  const T* pmat_b = mat_b.template data<T>();
 
   const auto& dim = mat_a.shape();
 
@@ -505,9 +505,9 @@ void matrix_pair_mul(core23::Tensor& o_vec, const core23::Tensor& mat_a,
 template <typename T>
 void out_product(core23::Tensor& out_mat, const core23::Tensor& vec_a, const core23::Tensor& vec_b,
                  cudaStream_t stream) {
-  T* pout = out_mat.data<T>();
-  const T* pvec_a = vec_a.data<T>();
-  const T* pvec_b = vec_b.data<T>();
+  T* pout = out_mat.template data<T>();
+  const T* pvec_a = vec_a.template data<T>();
+  const T* pvec_b = vec_b.template data<T>();
   const auto& dim = out_mat.shape();
 
   const int h = dim.size(0);
@@ -524,9 +524,9 @@ void out_product(core23::Tensor& out_mat, const core23::Tensor& vec_a, const cor
 template <typename T>
 void row_scaling_sum(core23::Tensor& out, const core23::Tensor& mat, const core23::Tensor& vec,
                      cudaStream_t stream) {
-  T* pout = out.data<T>();
-  const T* pmat = mat.data<T>();
-  const T* pvec = vec.data<T>();
+  T* pout = out.template data<T>();
+  const T* pmat = mat.template data<T>();
+  const T* pvec = vec.template data<T>();
 
   const auto& dim = out.shape();
   const auto& idim = mat.shape();
@@ -545,8 +545,8 @@ void row_scaling_sum(core23::Tensor& out, const core23::Tensor& mat, const core2
 
 template <typename T>
 void rows_sum(core23::Tensor& out, const core23::Tensor& mat, cudaStream_t stream) {
-  T* pout = out.data<T>();
-  const T* pmat = mat.data<T>();
+  T* pout = out.template data<T>();
+  const T* pmat = mat.template data<T>();
 
   const auto& dim = out.shape();
   const auto& idim = mat.shape();
@@ -649,9 +649,9 @@ void MultiCrossForwardFunctorv2<T>::operator()(
     // gemm with functor
     // x_i * u
     {
-      const T* mat_a = tensor_input.data<T>();
-      const T* mat_b = kernel_tensors[2 * i].data<T>();
-      T* mat_c = XU_tensors[i].data<T>();
+      const T* mat_a = tensor_input.template data<T>();
+      const T* mat_b = kernel_tensors[2 * i].template data<T>();
+      T* mat_c = XU_tensors[i].template data<T>();
       this->gemm_functor_(alpha, mat_a, mat_b, beta, mat_c, mat_c, xu_descr_[i], xu_fprop_algo_[i],
                           cublaslt_handle, stream);
     }
@@ -659,9 +659,9 @@ void MultiCrossForwardFunctorv2<T>::operator()(
     // gemm + bias with functor
     // x_i * u * v + b
     {
-      const T* mat_a = XU_tensors[i].data<T>();
-      const T* mat_b = kernel_tensors[2 * i + 1].data<T>();
-      T* mat_c = layer_hidden_tensors[i].data<T>();
+      const T* mat_a = XU_tensors[i].template data<T>();
+      const T* mat_b = kernel_tensors[2 * i + 1].template data<T>();
+      T* mat_c = layer_hidden_tensors[i].template data<T>();
       this->gemm_functor_(alpha, mat_a, mat_b, beta, mat_c, mat_c, xuvb_descr_[i],
                           xuvb_fprop_algo_[i], cublaslt_handle, stream);
     }
@@ -766,16 +766,16 @@ void MultiCrossBackwardFunctorv2<T>::operator()(
         HCTR_LIB_THROW(cudaStreamWaitEvent(wgrad_stream, event_overlap));
       }
       // 2 dH = S1 = S0 * V^T shape: (batchsize, project_dim)
-      const T* mat_a = bprop_bottoms[2 * i].data<T>();
-      const T* mat_b = kernel_tensors[2 * i + 1].data<T>();
-      T* mat_c = bprop_bottoms[1 + 2 * i].data<T>();
+      const T* mat_a = bprop_bottoms[2 * i].template data<T>();
+      const T* mat_b = kernel_tensors[2 * i + 1].template data<T>();
+      T* mat_c = bprop_bottoms[1 + 2 * i].template data<T>();
       this->gemm_functor_(1.0f, mat_a, mat_b, 0.0f, mat_c, mat_c, xuvb_descr_[i],
                           xuvb_bprop_algo_[i], cublaslt_handle, dgrad_stream);
 
       // 1 db, dV = XU_{i}^T * S0 shape: (project_dim, w)
-      mat_a = XU_tensors[i].data<T>();
-      mat_b = bprop_bottoms[2 * i].data<T>();
-      mat_c = kernel_output_tensors[2 * i + 1].data<T>();
+      mat_a = XU_tensors[i].template data<T>();
+      mat_b = bprop_bottoms[2 * i].template data<T>();
+      mat_c = kernel_output_tensors[2 * i + 1].template data<T>();
       this->gemm_functor_(1.0f, mat_a, mat_b, 1.0f, mat_c, mat_c, xu_descr_[i], xu_bprop_algo_[i],
                           cublaslt_handle, async_wgrad ? wgrad_stream : dgrad_stream);
       if (async_wgrad) {
@@ -783,9 +783,10 @@ void MultiCrossBackwardFunctorv2<T>::operator()(
         HCTR_LIB_THROW(cudaStreamWaitEvent(wgrad_stream, event_overlap));
       }
       // 3  dU = X_{i-1} ^T * S1 shape: (w, project_dim)
-      mat_a = i == 0 ? input_tensor.data<T>() : layer_output_tensors[i - 1].data<T>();
-      mat_b = bprop_bottoms[1 + 2 * i].data<T>();
-      mat_c = kernel_output_tensors[2 * i].data<T>();
+      mat_a =
+          i == 0 ? input_tensor.template data<T>() : layer_output_tensors[i - 1].template data<T>();
+      mat_b = bprop_bottoms[1 + 2 * i].template data<T>();
+      mat_c = kernel_output_tensors[2 * i].template data<T>();
       this->gemm_functor_(1.0f, mat_a, mat_b, 1.0f, mat_c, mat_c, du_descrs_bprop_[i],
                           du_bprop_algos_[i], cublaslt_handle,
                           async_wgrad ? wgrad_stream : dgrad_stream);
@@ -795,10 +796,10 @@ void MultiCrossBackwardFunctorv2<T>::operator()(
       }
 
       // 4 dY_{i-1} = S1 * U^T + dY_{i} shape: (batchsize, w)
-      mat_a = bprop_bottoms[1 + 2 * i].data<T>();
-      mat_b = kernel_tensors[i * 2].data<T>();
-      mat_c = grad_tensors[i + 1].data<T>();
-      T* mat_d = grad_tensors[i].data<T>();
+      mat_a = bprop_bottoms[1 + 2 * i].template data<T>();
+      mat_b = kernel_tensors[i * 2].template data<T>();
+      mat_c = grad_tensors[i + 1].template data<T>();
+      T* mat_d = grad_tensors[i].template data<T>();
       // gemm: mat_d = mat_a * mat_b + mat_c
       this->gemm_functor_(1.0f, mat_a, mat_b, 1.0f, mat_c, mat_d, dhidden_descrs_bprop_[i],
                           dhidden_bprop_algos_[i], cublaslt_handle, dgrad_stream);
@@ -1124,15 +1125,15 @@ void MultiCrossLayer<T>::search_algorithm() {
     {
       for (int i = 0; i < num_layers_; i++) {
         const auto& tensor_input = activation_tensors_[i];
-        const T* mat_a = tensor_input.data<T>();
+        const T* mat_a = tensor_input.template data<T>();
         const T* mat_b = this->get_weight(3 * i).template data<T>();
-        T* mat_c = XU_tensors_[i].data<T>();
+        T* mat_c = XU_tensors_[i].template data<T>();
 
         this->xu_fprop_algos_[i].search_algorithm(1.0f, mat_a, mat_b, 0.f, mat_c, mat_c,
                                                   xu_descrs_fprop_[i], cublaslt_handle, stream);
-        mat_a = XU_tensors_[i].data<T>();
+        mat_a = XU_tensors_[i].template data<T>();
         mat_b = this->get_weight(3 * i + 1).template data<T>();
-        mat_c = hidden_tensors_[i].data<T>();
+        mat_c = hidden_tensors_[i].template data<T>();
         this->xuvb_fprop_algos_[i].search_algorithm(1.0f, mat_a, mat_b, 0.f, mat_c, mat_c,
                                                     xuvb_descrs_fprop_[i], cublaslt_handle, stream);
       }
@@ -1142,30 +1143,30 @@ void MultiCrossLayer<T>::search_algorithm() {
     {
       for (int i = 0; i < num_layers_; i++) {
         // 1
-        const T* mat_a = XU_tensors_[i].data<T>();
-        const T* mat_b = bprop_bottom_[2 * i].data<T>();
+        const T* mat_a = XU_tensors_[i].template data<T>();
+        const T* mat_b = bprop_bottom_[2 * i].template data<T>();
         T* mat_c = this->get_wgrad(3 * i + 1).template data<T>();
         this->xu_bprop_algos_[i].search_algorithm(1.0, mat_a, mat_b, 1.0, mat_c, mat_c,
                                                   xu_descrs_bprop_[i], cublaslt_handle, stream);
         // 2
-        mat_a = bprop_bottom_[2 * i].data<T>();
+        mat_a = bprop_bottom_[2 * i].template data<T>();
         mat_b = this->get_wgrad(3 * i + 1).template data<T>();
-        mat_c = bprop_bottom_[1 + 2 * i].data<T>();
+        mat_c = bprop_bottom_[1 + 2 * i].template data<T>();
         this->xuvb_bprop_algos_[i].search_algorithm(1.0, mat_a, mat_b, 0.0, mat_c, mat_c,
                                                     xuvb_descrs_bprop_[i], cublaslt_handle, stream);
         // 3
-        mat_a = activation_tensors_[i].data<T>();
-        mat_b = bprop_bottom_[1 + 2 * i].data<T>();
+        mat_a = activation_tensors_[i].template data<T>();
+        mat_b = bprop_bottom_[1 + 2 * i].template data<T>();
         mat_c = this->get_wgrad(3 * i).template data<T>();
         this->du_bprop_algos_[i].search_algorithm(1.0, mat_a, mat_b, 1.0, mat_c, mat_c,
                                                   du_descrs_bprop_[i], cublaslt_handle, stream);
 
         // 4
 
-        mat_a = bprop_bottom_[1 + 2 * i].data<T>();
+        mat_a = bprop_bottom_[1 + 2 * i].template data<T>();
         mat_b = this->get_weight(3 * i).template data<T>();
-        mat_c = this->dgrads_[i + 1].data<T>();
-        T* mat_d = this->dgrads_[i].data<T>();
+        mat_c = this->dgrads_[i + 1].template data<T>();
+        T* mat_d = this->dgrads_[i].template data<T>();
         this->dhidden_bprop_algos_[i].search_algorithm(1.0, mat_a, mat_b, 1.0, mat_c, mat_d,
                                                        dhidden_descrs_bprop_[i], cublaslt_handle,
                                                        stream);

@@ -42,10 +42,7 @@ class ResourceManager;
 struct CollSyncHelper {
  public:
   void recv_bcast() { recv_bcast_cnt_++; }
-  void wait_recv_bcast(size_t count) {
-    while (*(volatile size_t*)(&recv_bcast_cnt_) < count)
-      ;
-  }
+  void wait_recv_bcast(size_t count) { while (*(volatile size_t*)(&recv_bcast_cnt_) < count); }
 
  private:
   volatile size_t recv_bcast_cnt_ = 1;

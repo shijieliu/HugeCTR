@@ -99,7 +99,7 @@ void matmul_test(int64_t b, int64_t m, int64_t n, int64_t k) {
   size_t num = 2;
   std::unique_ptr<T *[]> h_d_ins(new T *[num]);
   for (size_t i = 0; i < num; i++) {
-    h_d_ins[i] = input_tensors[i].data<T>();
+    h_d_ins[i] = input_tensors[i].template data<T>();
   }
 
   std::unique_ptr<T *[]> h_ins(new T *[num]);
@@ -124,7 +124,7 @@ void matmul_test(int64_t b, int64_t m, int64_t n, int64_t k) {
   matmul_layer.fprop(true);
   HCTR_LIB_THROW(cudaDeviceSynchronize());
 
-  T *d_out = output_tensor.data<T>();
+  T *d_out = output_tensor.template data<T>();
   core23::copy_sync(h_out.get(), d_out, out_size * sizeof(T), core23::DeviceType::CPU,
                     output_tensor.device());
   matmul_cpu(h_ins[0], h_ins[1], h_cpu_out.get(), b, m, n, k);
@@ -144,7 +144,7 @@ void matmul_test(int64_t b, int64_t m, int64_t n, int64_t k) {
   for (size_t i = 0; i < num; i++) {
     auto size =
         b * input_tensors[i].shape().size(dims - 2) * input_tensors[i].shape().size(dims - 1);
-    T *d_out = input_tensors[i].data<T>();
+    T *d_out = input_tensors[i].template data<T>();
     core23::copy_sync(h_bprop_out[i], d_out, size * sizeof(T), core23::DeviceType::CPU,
                       input_tensors[i].device());
     ASSERT_TRUE(test::compare_array_approx<T>(h_bprop_out[i], h_cpu_bprop_out[i], size,
@@ -177,7 +177,7 @@ void matmul_test_4d(int64_t b, int64_t h, int64_t m, int64_t n, int64_t k) {
   size_t num = 2;
   std::unique_ptr<T *[]> h_d_ins(new T *[num]);
   for (size_t i = 0; i < num; i++) {
-    h_d_ins[i] = input_tensors[i].data<T>();
+    h_d_ins[i] = input_tensors[i].template data<T>();
   }
 
   std::unique_ptr<T *[]> h_ins(new T *[num]);
@@ -202,7 +202,7 @@ void matmul_test_4d(int64_t b, int64_t h, int64_t m, int64_t n, int64_t k) {
   matmul_layer.fprop(true);
   HCTR_LIB_THROW(cudaDeviceSynchronize());
 
-  T *d_out = output_tensor.data<T>();
+  T *d_out = output_tensor.template data<T>();
   core23::copy_sync(h_out.get(), d_out, out_size * sizeof(T), core23::DeviceType::CPU,
                     output_tensor.device());
   matmul_cpu(h_ins[0], h_ins[1], h_cpu_out.get(), b * h, m, n, k);
@@ -222,7 +222,7 @@ void matmul_test_4d(int64_t b, int64_t h, int64_t m, int64_t n, int64_t k) {
   for (size_t i = 0; i < num; i++) {
     auto size = b * input_tensors[i].shape().size(dims - 3) *
                 input_tensors[i].shape().size(dims - 2) * input_tensors[i].shape().size(dims - 1);
-    T *d_out = input_tensors[i].data<T>();
+    T *d_out = input_tensors[i].template data<T>();
     core23::copy_sync(h_bprop_out[i], d_out, size * sizeof(T), core23::DeviceType::CPU,
                       input_tensors[i].device());
     ASSERT_TRUE(test::compare_array_approx<T>(h_bprop_out[i], h_cpu_bprop_out[i], size,

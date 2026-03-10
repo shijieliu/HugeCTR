@@ -95,13 +95,13 @@ void core23_elementwise_multiply_test(int64_t batch_size, int64_t slot_num,
 
   std::unique_ptr<T *[]> h_d_ins(new T *[num]);
   for (size_t i = 0; i < num; i++) {
-    h_d_ins[i] = in_tensors[i].data<T>();
+    h_d_ins[i] = in_tensors[i].template data<T>();
   }
   T **d_ins;
   HCTR_LIB_THROW(cudaMalloc((void **)(&d_ins), num * sizeof(T *)));
   HCTR_LIB_THROW(
       cudaMemcpy((void *)d_ins, (void *)h_d_ins.get(), num * sizeof(T *), cudaMemcpyHostToDevice));
-  T *d_out = out_tensor.data<T>();
+  T *d_out = out_tensor.template data<T>();
 
   std::unique_ptr<T *[]> h_ins(new T *[num]);
   for (size_t i = 0; i < num; i++) {

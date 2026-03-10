@@ -66,9 +66,9 @@ template <typename T>
 void SequenceMaskLayer<T>::fprop(bool is_train) {
   CudaDeviceContext context(get_device_id());
 
-  auto* seq_from_len = input_tensors_[0].data<T>();
-  auto* seq_to_len = input_tensors_[1].data<T>();
-  auto* output = output_tensors_[0].data<T>();
+  auto* seq_from_len = input_tensors_[0].template data<T>();
+  auto* seq_to_len = input_tensors_[1].template data<T>();
+  auto* output = output_tensors_[0].template data<T>();
 
   const auto batch_size = input_tensors_[0].shape().size(0);
   const size_t block_dim = 1024;

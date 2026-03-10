@@ -46,9 +46,9 @@ void CompressOffset::compute(const core23::Tensor &offset, int batch_size,
   DISPATCH_INTEGRAL_FUNCTION_CORE23(offset.data_type().type(), offset_t, [&] {
     dim3 block_size(256);
 
-    compress_offset_kernel<<<1, block_size, 0, stream>>>(offset.data<offset_t>(),
-                                                         num_compressed_offset_, batch_size,
-                                                         compressed_offset_.data<offset_t>());
+    compress_offset_kernel<<<1, block_size, 0, stream>>>(
+        offset.template data<offset_t>(), num_compressed_offset_, batch_size,
+        compressed_offset_.template data<offset_t>());
   });
 
   *compressed_offset = compressed_offset_;
@@ -82,12 +82,12 @@ void AverageCombiner::compute_feature_major(const core23::Tensor &dp_num_keys_pe
 
   DISPATCH_INTEGRAL_FUNCTION_CORE23(dp_num_keys_per_bucket.data_type().type(), offset_t, [&] {
     DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(src_emb_vec.data_type().type(), emb_t, [&] {
-      const offset_t *dp_num_keys_per_bucket_ptr = dp_num_keys_per_bucket.data<offset_t>();
-      const int *local_embedding_ptr = d_local_embedding_list.data<int>();
-      const int *d_ev_size_offset_ptr = d_ev_size_offset.data<int>();
-      const emb_t *top_grad_ptr = src_emb_vec.data<emb_t>();
-      const char *combiner_ptr = d_combiner_list.data<char>();
-      float *float_emb_vec_ptr = float_emb_vec_.data<float>();
+      const offset_t *dp_num_keys_per_bucket_ptr = dp_num_keys_per_bucket.template data<offset_t>();
+      const int *local_embedding_ptr = d_local_embedding_list.template data<int>();
+      const int *d_ev_size_offset_ptr = d_ev_size_offset.template data<int>();
+      const emb_t *top_grad_ptr = src_emb_vec.template data<emb_t>();
+      const char *combiner_ptr = d_combiner_list.template data<char>();
+      float *float_emb_vec_ptr = float_emb_vec_.template data<float>();
       int gpu_id = core_->get_global_gpu_id();
 
       auto multi_to_one_desc = make_MultiToOne<emb_t, float>(
@@ -141,12 +141,12 @@ void AverageCombiner::compute_batch_major(const core23::Tensor &dp_num_keys_per_
 
   DISPATCH_INTEGRAL_FUNCTION_CORE23(dp_num_keys_per_bucket.data_type().type(), offset_t, [&] {
     DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(src_emb_vec.data_type().type(), emb_t, [&] {
-      const offset_t *dp_num_keys_per_bucket_ptr = dp_num_keys_per_bucket.data<offset_t>();
-      const int *local_embedding_ptr = d_local_embedding_list.data<int>();
-      const int *d_ev_size_offset_ptr = d_ev_size_offset.data<int>();
-      const emb_t *top_grad_ptr = src_emb_vec.data<emb_t>();
-      const char *combiner_ptr = d_combiner_list.data<char>();
-      float *float_emb_vec_ptr = float_emb_vec_.data<float>();
+      const offset_t *dp_num_keys_per_bucket_ptr = dp_num_keys_per_bucket.template data<offset_t>();
+      const int *local_embedding_ptr = d_local_embedding_list.template data<int>();
+      const int *d_ev_size_offset_ptr = d_ev_size_offset.template data<int>();
+      const emb_t *top_grad_ptr = src_emb_vec.template data<emb_t>();
+      const char *combiner_ptr = d_combiner_list.template data<char>();
+      float *float_emb_vec_ptr = float_emb_vec_.template data<float>();
       int gpu_id = core_->get_global_gpu_id();
 
       auto multi_to_one_desc = make_MultiToOne<emb_t, float>(

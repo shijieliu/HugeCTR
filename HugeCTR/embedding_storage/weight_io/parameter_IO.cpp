@@ -422,8 +422,8 @@ void EmbeddingParameterIO::dump_embedding_weight(const std::string& parameters_f
 
             group_embedding_tables[hit_gpu_id][group_index]->dump_by_id(
                 &key_tensor_tmp, &weight_tensor_tmp, table_id);
-            key_t* tmp_table_key_ptr_part = key_tensor_tmp.data<key_t>();
-            float* tmp_table_weight_ptr_part = weight_tensor_tmp.data<float>();
+            key_t* tmp_table_key_ptr_part = key_tensor_tmp.template data<key_t>();
+            float* tmp_table_weight_ptr_part = weight_tensor_tmp.template data<float>();
 
             memcpy(tmp_table_key_ptr, tmp_table_key_ptr_part, tmp_local_key_num * sizeof(key_t));
             memcpy(tmp_table_weight_ptr, tmp_table_weight_ptr_part,
@@ -499,7 +499,7 @@ void EmbeddingParameterIO::load_embedding_weight(
                                       .data_type(epi.key_type)
                                       .buffer_params(buffer_prams)};
 
-    key_t* key_tensor_ptr = key_tensor_tmp.data<key_t>();
+    key_t* key_tensor_ptr = key_tensor_tmp.template data<key_t>();
     file_system->read_from(ebc_key_path, key_tensor_ptr, key_num * sizeof(key_t), FileHeadNbytes);
     size_t target_key_num = 0;
     for (int i = 0; i < key_num; ++i) {
@@ -517,9 +517,9 @@ void EmbeddingParameterIO::load_embedding_weight(
         core23::Tensor(params.shape({static_cast<int64_t>(target_key_num * ev_length)})
                            .data_type(target_value_type));
 
-    key_t* keys_ptr = keys.data<key_t>();
-    float* weight_tensor_ptr = weight_tensor_tmp.data<float>();
-    float* embedding_weights_ptr = embedding_weights.data<float>();
+    key_t* keys_ptr = keys.template data<key_t>();
+    float* weight_tensor_ptr = weight_tensor_tmp.template data<float>();
+    float* embedding_weights_ptr = embedding_weights.template data<float>();
 
     file_system->read_from(ebc_weight_path, weight_tensor_ptr, key_num * ev_length * sizeof(key_t),
                            FileHeadNbytes);

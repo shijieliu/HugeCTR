@@ -90,8 +90,8 @@ void NcclAll2AllComm::dense_communicate(const core23::Tensor& send_tensor,
   uint64_t recv_offset = 0;
 
   DISPATCH_INTEGRAL_FUNCTION_CORE23(h_send_k_per_gpu.data_type().type(), key_t, [&] {
-    key_t* send_key_ptr = h_send_k_per_gpu.data<key_t>();
-    key_t* recv_key_ptr = h_recv_k_per_gpu.data<key_t>();
+    key_t* send_key_ptr = h_send_k_per_gpu.template data<key_t>();
+    key_t* recv_key_ptr = h_recv_k_per_gpu.template data<key_t>();
     HugeCTR::CudaDeviceContext ctx(device_id);
     HCTR_LIB_THROW(ncclGroupStart());
     int num_total_gpu = core_->get_global_gpu_count();

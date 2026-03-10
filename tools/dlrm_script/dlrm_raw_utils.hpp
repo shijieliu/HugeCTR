@@ -554,7 +554,7 @@ size_t convert_input_binaries(rmm::mr::device_memory_resource *mr, std::string i
     std::vector<const bitmask_type *> int_col_nullmask_dev_ptrs;
     for (int k = 0; k < num_numericals; k++) {
       col_logs.push_back(&(tbl_w_metadata.tbl->get_column(k)));
-      int_col_dev_ptrs.push_back(col_logs[k]->view().data<int32_t>());
+      int_col_dev_ptrs.push_back(col_logs[k]->view().template data<int32_t>());
 
       int_col_nullmask_dev_ptrs.push_back(col_logs[k]->view().null_mask());
     }
@@ -575,7 +575,7 @@ size_t convert_input_binaries(rmm::mr::device_memory_resource *mr, std::string i
     for (int k = 0; k < num_categoricals; k++) {
       auto str_col_view = cudf::strings_column_view((col_logs[k + num_numericals]->view()));
       char_ptrs.push_back(const_cast<char *>(str_col_view.chars_begin(cudf::get_default_stream())));
-      offset_ptrs.push_back(const_cast<int32_t *>(str_col_view.offsets().data<int32_t>()));
+      offset_ptrs.push_back(const_cast<int32_t *>(str_col_view.offsets().template data<int32_t>()));
     }
 
     HCTR_LIB_THROW(cudaMemset(dev_int_col_nullmask_ptrs, 0, sz_dev_int_col));

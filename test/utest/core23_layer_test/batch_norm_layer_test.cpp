@@ -216,8 +216,8 @@ void batch_norm_test(int64_t batch_size, int64_t num_feature) {
 
   const size_t len = batch_size * num_feature;
 
-  T* d_in = in_tensor.data<T>();
-  T* d_out = out_tensor.data<T>();
+  T* d_in = in_tensor.template data<T>();
+  T* d_out = out_tensor.template data<T>();
 
   std::unique_ptr<float[]> h_gamma(new float[num_feature]);
   std::unique_ptr<float[]> h_beta(new float[num_feature]);
@@ -237,8 +237,8 @@ void batch_norm_test(int64_t batch_size, int64_t num_feature) {
   core23::TensorContainer<float, 1, 1> weights_container(std::move(weights),
                                                          {static_cast<int64_t>(weights.size())});
 
-  float* d_gamma = weights_container[0].data<float>();
-  float* d_beta = weights_container[1].data<float>();
+  float* d_gamma = weights_container[0].template data<float>();
+  float* d_beta = weights_container[1].template data<float>();
   HCTR_LIB_THROW(
       cudaMemcpy(d_gamma, h_gamma.get(), num_feature * sizeof(float), cudaMemcpyHostToDevice));
   HCTR_LIB_THROW(

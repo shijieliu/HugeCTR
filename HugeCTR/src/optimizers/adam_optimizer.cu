@@ -89,8 +89,8 @@ void AdamOptimizer<T>::update() {
   auto len = flat_weight_tensor.size(0);
   const size_t grid_dim = (len - 1) / block_dim + 1;
 
-  float* m = m_tensor_.data<float>();
-  float* v = v_tensor_.data<float>();
+  float* m = m_tensor_.template data<float>();
+  float* v = v_tensor_.template data<float>();
 
   adam_update_kernel<<<grid_dim, block_dim, 0, gpu_resource_->get_stream()>>>(
       len, weight, m, v, wgrad, alpha_t, beta1_, beta2_, epsilon_, scaler_);

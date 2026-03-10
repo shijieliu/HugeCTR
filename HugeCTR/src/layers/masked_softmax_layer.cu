@@ -183,8 +183,9 @@ void MaskedSoftmaxLayer<T>::fprop(bool is_train) {
   core23::Tensor& out_tensor = out_tensors_[0];
   const auto& shape_in = in_tensor.shape();
 
-  mask_softmax_fprop(out_tensor.data<T>(), in_tensor.data<T>(), mask_tensor.data<T>(), shape_in[0],
-                     shape_in[1], shape_in[2], shape_in[3], scalar_, get_gpu().get_stream());
+  mask_softmax_fprop(out_tensor.template data<T>(), in_tensor.template data<T>(),
+                     mask_tensor.template data<T>(), shape_in[0], shape_in[1], shape_in[2],
+                     shape_in[3], scalar_, get_gpu().get_stream());
   HCTR_LIB_THROW(cudaMemcpyAsync((void*)softmax_out_.data(), (void*)out_tensor.data(),
                                  out_tensor.num_bytes(), cudaMemcpyDeviceToDevice,
                                  get_gpu().get_stream()));
@@ -197,9 +198,9 @@ void MaskedSoftmaxLayer<__half>::fprop(bool is_train) {
   core23::Tensor& mask_tensor = in_tensors_[1];
   core23::Tensor& out_tensor = out_tensors_[0];
   const auto& shape_in = in_tensor.shape();
-  mask_softmax_fprop(out_tensor.data<__half>(), in_tensor.data<__half>(),
-                     mask_tensor.data<__half>(), shape_in[0], shape_in[1], shape_in[2], shape_in[3],
-                     scalar_, get_gpu().get_stream());
+  mask_softmax_fprop(out_tensor.template data<__half>(), in_tensor.template data<__half>(),
+                     mask_tensor.template data<__half>(), shape_in[0], shape_in[1], shape_in[2],
+                     shape_in[3], scalar_, get_gpu().get_stream());
   HCTR_LIB_THROW(cudaMemcpyAsync((void*)softmax_out_.data(), (void*)out_tensor.data(),
                                  out_tensor.num_bytes(), cudaMemcpyDeviceToDevice,
                                  get_gpu().get_stream()));
@@ -214,8 +215,9 @@ void MaskedSoftmaxLayer<T>::bprop() {
   int hidden_size = shape_in[shape_in.dims() - 1];
   int batch = bottom_tensor.num_elements() / hidden_size;
 
-  mask_softmax_bprop(top_tensor.data<T>(), bottom_tensor.data<T>(), softmax_out_.data<T>(), batch,
-                     hidden_size, scalar_, get_gpu().get_stream());
+  mask_softmax_bprop(top_tensor.template data<T>(), bottom_tensor.template data<T>(),
+                     softmax_out_.template data<T>(), batch, hidden_size, scalar_,
+                     get_gpu().get_stream());
 }
 
 template <>
@@ -228,8 +230,8 @@ void MaskedSoftmaxLayer<__half>::bprop() {
   int hidden_size = shape_in[shape_in.dims() - 1];
   int n_rows = bottom_tensor.num_elements() / hidden_size;
 
-  mask_softmax_bprop(top_tensor.data<__half>(), bottom_tensor.data<__half>(),
-                     softmax_out_.data<__half>(), n_rows, hidden_size, scalar_,
+  mask_softmax_bprop(top_tensor.template data<__half>(), bottom_tensor.template data<__half>(),
+                     softmax_out_.template data<__half>(), n_rows, hidden_size, scalar_,
                      get_gpu().get_stream());
 }
 

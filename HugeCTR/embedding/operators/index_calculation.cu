@@ -53,22 +53,22 @@ struct KeySelectorGPU {
 
   KeySelectorGPU(const core23::Tensor &keys, const core23::Tensor &bucket_range,
                  const MPKeySelector &key_selector, int batch_size)
-      : keys_ptr(keys.data<key_t>()),
-        bucket_range_ptr(bucket_range.data<offset_t>()),
-        lookup_ids_ptr(key_selector.lookup_ids.data<int>()),
+      : keys_ptr(keys.template data<key_t>()),
+        bucket_range_ptr(bucket_range.template data<offset_t>()),
+        lookup_ids_ptr(key_selector.lookup_ids.template data<int>()),
         num_lookup_before_filter(key_selector.num_lookup_before_filter),
         num_lookup_after_filter(key_selector.num_lookup_after_filter),
         gpu_id(0),
         num_gpus(1),
         batch_size_per_gpu(batch_size),
-        shard_ids_ptr_(key_selector.shard_ids.data<int>()),
-        num_shards_ptr_(key_selector.num_shards.data<int>()) {}
+        shard_ids_ptr_(key_selector.shard_ids.template data<int>()),
+        num_shards_ptr_(key_selector.num_shards.template data<int>()) {}
 
   KeySelectorGPU(const core23::Tensor &keys, const core23::Tensor &bucket_range,
                  const DPKeySelector &key_selector, int batch_size)
-      : keys_ptr(keys.data<key_t>()),
-        bucket_range_ptr(bucket_range.data<offset_t>()),
-        lookup_ids_ptr(key_selector.lookup_ids.data<int>()),
+      : keys_ptr(keys.template data<key_t>()),
+        bucket_range_ptr(bucket_range.template data<offset_t>()),
+        lookup_ids_ptr(key_selector.lookup_ids.template data<int>()),
         num_lookup_before_filter(key_selector.num_lookup_before_filter),
         num_lookup_after_filter(key_selector.num_lookup_after_filter),
         gpu_id(key_selector.gpu_id),
@@ -196,10 +196,10 @@ void IndexCalculation<KeySelector>::filter_sparse_input(const core23::Tensor &ke
 
   DISPATCH_INTEGRAL_FUNCTION_CORE23(keys.data_type().type(), key_t, [&] {
     DISPATCH_INTEGRAL_FUNCTION_CORE23(bucket_range.data_type().type(), offset_t, [&] {
-      const key_t *keys_ptr = keys.data<key_t>();
+      const key_t *keys_ptr = keys.template data<key_t>();
 
-      offset_t *bucket_range_after_filter = result.bucket_range.data<offset_t>();
-      key_t *keys_after_filter = result.keys.data<key_t>();
+      offset_t *bucket_range_after_filter = result.bucket_range.template data<offset_t>();
+      key_t *keys_after_filter = result.keys.template data<key_t>();
 
       KeySelectorGPU<key_t, offset_t> key_selector_gpu{keys, bucket_range, key_selector_,
                                                        batch_size};
@@ -208,7 +208,7 @@ void IndexCalculation<KeySelector>::filter_sparse_input(const core23::Tensor &ke
                             core_->get_kernel_param().max_thread_per_block / block_size;
       mask_and_count_keys_in_bucket_kernel<<<grid_size, block_size, 0, stream>>>(
           key_selector_gpu, key_selector_gpu.keys_ptr, bucket_range_after_filter,
-          temp_storage_.flag.data<char>(), result.bucket_range.num_elements() - 1);
+          temp_storage_.flag.template data<char>(), result.bucket_range.num_elements() - 1);
 
       size_t temp_scan_storage_nbytes = temp_storage_.temp_scan_storage.num_bytes();
       cub::DeviceScan::InclusiveSum(temp_storage_.temp_scan_storage.data(),
@@ -217,12 +217,12 @@ void IndexCalculation<KeySelector>::filter_sparse_input(const core23::Tensor &ke
                                     stream);
 
       size_t temp_select_storage_nbytes = temp_storage_.temp_select_storage.num_bytes();
-      cub::DeviceSelect::Flagged(temp_storage_.temp_select_storage.data(),
-                                 temp_select_storage_nbytes, keys_ptr,
-                                 temp_storage_.flag.data<char>(), keys_after_filter,
-                                 result.num_keys.data<size_t>(), keys.num_elements(), stream);
+      cub::DeviceSelect::Flagged(
+          temp_storage_.temp_select_storage.data(), temp_select_storage_nbytes, keys_ptr,
+          temp_storage_.flag.template data<char>(), keys_after_filter,
+          result.num_keys.template data<size_t>(), keys.num_elements(), stream);
       HCTR_LIB_THROW(cudaStreamSynchronize(stream));
-      result.h_num_keys = static_cast<size_t>(result.num_keys.data<uint64_t>()[0]);
+      result.h_num_keys = static_cast<size_t>(result.num_keys.template data<uint64_t>()[0]);
     });
   });
 }
@@ -317,19 +317,20 @@ void group_keys_by_lookup_id(const core23::Tensor &keys, const core23::Tensor &b
       const int grid_size = core->get_kernel_param().num_sms *
                             core->get_kernel_param().max_thread_per_block / block_size;
       subtract_left_kernel<<<grid_size, block_size, 0, stream>>>(
-          sorted_lookup_ids.data<int>(), bucket_range.data<offset_t>(), num_lookup, batch_size,
-          partitioned_bucket_range.data<offset_t>());
+          sorted_lookup_ids.template data<int>(), bucket_range.template data<offset_t>(),
+          num_lookup, batch_size, partitioned_bucket_range.template data<offset_t>());
 
       size_t temp_storage_nbytes = temp_storage.temp_scan_storage.num_bytes();
       cub::DeviceScan::InclusiveSum(temp_storage.temp_scan_storage.data(), temp_storage_nbytes,
-                                    partitioned_bucket_range.data<offset_t>(),
-                                    partitioned_bucket_range.data<offset_t>(),
+                                    partitioned_bucket_range.template data<offset_t>(),
+                                    partitioned_bucket_range.template data<offset_t>(),
                                     num_lookup * batch_size + 1, stream);
 
       group_keys_by_lookup_id_kernel<<<grid_size, block_size, 0, stream>>>(
-          sorted_lookup_ids.data<int>(), keys.data<key_t>(), bucket_range.data<offset_t>(),
-          partitioned_bucket_range.data<offset_t>(), num_lookup, batch_size,
-          partitioned_keys.data<key_t>());
+          sorted_lookup_ids.template data<int>(), keys.template data<key_t>(),
+          bucket_range.template data<offset_t>(),
+          partitioned_bucket_range.template data<offset_t>(), num_lookup, batch_size,
+          partitioned_keys.template data<key_t>());
     });
   });
 }
@@ -388,9 +389,10 @@ void replicate_bucket_range(const core23::Tensor &bucket_range,
                           core->get_kernel_param().max_thread_per_block / block_size;
     replicate_bucket_range_kernel<<<grid_size, block_size, sizeof(uint32_t) * (block_size + 1),
                                     stream>>>(
-        bucket_range.data<offset_t>(), sorted_lookup_ids.data<int>(), sorted_table_ids.data<int>(),
-        table_id_to_ev_size.data<int>(), num_lookup, batch_size, src_ids.data<uint32_t>(),
-        table_ids.data<int>(), ev_sizes.data<int>(), num_key.data<uint64_t>());
+        bucket_range.template data<offset_t>(), sorted_lookup_ids.template data<int>(),
+        sorted_table_ids.template data<int>(), table_id_to_ev_size.template data<int>(), num_lookup,
+        batch_size, src_ids.template data<uint32_t>(), table_ids.template data<int>(),
+        ev_sizes.template data<int>(), num_key.template data<uint64_t>());
   });
 }
 
@@ -574,40 +576,42 @@ void SegmentedSortDevice::operator()(embedding::SortInput &input, embedding::Sor
 
   DISPATCH_INTEGRAL_FUNCTION_CORE23(bucket_range.data_type().type(), offset_t, [&] {
     cal_table_range_kernel<<<grid_size, block_size, 0, stream>>>(
-        bucket_range.data<offset_t>(), sorted_table_ids_.data<int>(), num_lookup_,
-        temp_lookup_range.data<int>(), batch_size_);
+        bucket_range.template data<offset_t>(), sorted_table_ids_.template data<int>(), num_lookup_,
+        temp_lookup_range.template data<int>(), batch_size_);
   });
   LessThan select_op(std::numeric_limits<int>::max());
   size_t temp_storage_nbytes = temp_select_storage.num_bytes();
   cub::DeviceSelect::If(temp_select_storage.data(), temp_storage_nbytes,
-                        temp_lookup_range.data<int>(), partitioned_table_range.data<int>(),
-                        d_num_selected_table_range_.data<int>(), temp_lookup_range.num_elements(),
-                        select_op, stream);
+                        temp_lookup_range.template data<int>(),
+                        partitioned_table_range.template data<int>(),
+                        d_num_selected_table_range_.template data<int>(),
+                        temp_lookup_range.num_elements(), select_op, stream);
 
   // sort
 #if CUB_VERSION >= 200200
   DISPATCH_INTEGRAL_FUNCTION_CORE23(input.keys.data_type().type(), key_t, [&] {
     compose_tid_key_kernel<<<grid_size, block_size, 0, stream>>>(
-        input.keys.data<key_t>(), partitioned_table_range.data<int>(), input.h_num_key,
-        num_table_ + 1, static_cast<struct ComposeTidKey<key_t> *>(compose_tid_keys_input.data()));
+        input.keys.template data<key_t>(), partitioned_table_range.template data<int>(),
+        input.h_num_key, num_table_ + 1,
+        static_cast<struct ComposeTidKey<key_t> *>(compose_tid_keys_input.data()));
     cub::DeviceRadixSort::SortPairs(
         cub_sort_temp_buffer_.data(), cub_sort_temp_bytes_,
         static_cast<struct ComposeTidKey<key_t> *>(compose_tid_keys_input.data()),
         static_cast<struct ComposeTidKey<key_t> *>(compose_tid_keys_output.data()),
-        input.src_ids.data<uint32_t>(), output.sorted_src_ids.data<uint32_t>(), input.h_num_key,
-        Decomposr<key_t>{}, 0, sizeof(struct ComposeTidKey<key_t>) * 8, stream);
+        input.src_ids.template data<uint32_t>(), output.sorted_src_ids.template data<uint32_t>(),
+        input.h_num_key, Decomposr<key_t>{}, 0, sizeof(struct ComposeTidKey<key_t>) * 8, stream);
     decompose_tid_key_kernel<<<grid_size, block_size, 0, stream>>>(
         static_cast<struct ComposeTidKey<key_t> *>(compose_tid_keys_output.data()), input.h_num_key,
-        output.sorted_keys.data<key_t>());
+        output.sorted_keys.template data<key_t>());
   });
 #else
   DISPATCH_INTEGRAL_FUNCTION_CORE23(input.keys.data_type().type(), key_t, [&] {
     cub::DeviceSegmentedRadixSort::SortPairs(
-        cub_sort_temp_buffer_.data(), cub_sort_temp_bytes_, input.keys.data<key_t>(),
-        output.sorted_keys.data<key_t>(), input.src_ids.data<uint32_t>(),
-        output.sorted_src_ids.data<uint32_t>(), input.h_num_key, num_table_,
-        partitioned_table_range.data<int>(), partitioned_table_range.data<int>() + 1, 0,
-        sizeof(key_t) * 8, stream);
+        cub_sort_temp_buffer_.data(), cub_sort_temp_bytes_, input.keys.template data<key_t>(),
+        output.sorted_keys.template data<key_t>(), input.src_ids.template data<uint32_t>(),
+        output.sorted_src_ids.template data<uint32_t>(), input.h_num_key, num_table_,
+        partitioned_table_range.template data<int>(),
+        partitioned_table_range.template data<int>() + 1, 0, sizeof(key_t) * 8, stream);
   });
 #endif
 }
@@ -637,9 +641,9 @@ void IndicesSort::operator()(embedding::SortInput &input, embedding::SortOutput 
   DISPATCH_INTEGRAL_FUNCTION_CORE23(key_type.type(), key_t, [&] {
     size_t temp_bytes = d_temp_sort_storage.num_bytes();
     cub::DeviceRadixSort::SortPairs(
-        d_temp_sort_storage.data(), temp_bytes, input.keys.data<key_t>(),
-        output.sorted_keys.data<key_t>(), input.src_ids.data<uint32_t>(),
-        output.sorted_src_ids.data<uint32_t>(), static_cast<int64_t>(input.h_num_key), 0,
+        d_temp_sort_storage.data(), temp_bytes, input.keys.template data<key_t>(),
+        output.sorted_keys.template data<key_t>(), input.src_ids.template data<uint32_t>(),
+        output.sorted_src_ids.template data<uint32_t>(), static_cast<int64_t>(input.h_num_key), 0,
         sizeof(key_t) * 8, stream);
   });
 }
@@ -734,15 +738,15 @@ void SegmentdUnique::operator()(const core23::Tensor &sorted_keys, const core23:
       core->get_kernel_param().num_sms * core->get_kernel_param().max_thread_per_block / block_size;
   DISPATCH_INTEGRAL_FUNCTION_CORE23(key_type.type(), key_t, [&] {
     get_keys_flag<<<grid_size, block_size, 0, stream>>>(
-        sorted_keys.data<key_t>(), table_ids.data<int>(), key_num.data<uint64_t>(),
-        key_flag_buffer_.data<uint32_t>());
+        sorted_keys.template data<key_t>(), table_ids.template data<int>(),
+        key_num.template data<uint64_t>(), key_flag_buffer_.template data<uint32_t>());
   });
 
   DISPATCH_INTEGRAL_FUNCTION_CORE23(key_type.type(), key_t, [&] {
     size_t temp_bytes = cub_scan_temp_buffer_.num_bytes();
     cub::DeviceScan::InclusiveSum(cub_scan_temp_buffer_.data(), temp_bytes,
-                                  key_flag_buffer_.data<uint32_t>(),
-                                  key_flag_buffer_.data<uint32_t>(), h_num_key, stream);
+                                  key_flag_buffer_.template data<uint32_t>(),
+                                  key_flag_buffer_.template data<uint32_t>(), h_num_key, stream);
   });
 
   if (need_allocate_wgrad_buffer_) {
@@ -755,15 +759,17 @@ void SegmentdUnique::operator()(const core23::Tensor &sorted_keys, const core23:
   DISPATCH_INTEGRAL_FUNCTION_CORE23(key_type.type(), key_t, [&] {
     if (is_same_ev_size) {
       get_unique_key_same_ev_size<<<grid_size, block_size, 0, stream>>>(
-          sorted_keys.data<key_t>(), table_ids.data<int>(), key_flag_buffer_.data<uint32_t>(),
-          key_num.data<size_t>(), ev_size, wgrad.unique_keys.data<key_t>(),
-          wgrad.table_ids.data<int>(), wgrad.ev_start_indices.data<uint32_t>(),
-          wgrad.num_unique_keys.data<size_t>(), dst_ids.data<uint32_t>());
+          sorted_keys.template data<key_t>(), table_ids.template data<int>(),
+          key_flag_buffer_.template data<uint32_t>(), key_num.template data<size_t>(), ev_size,
+          wgrad.unique_keys.template data<key_t>(), wgrad.table_ids.template data<int>(),
+          wgrad.ev_start_indices.template data<uint32_t>(),
+          wgrad.num_unique_keys.template data<size_t>(), dst_ids.template data<uint32_t>());
     } else {
       get_unique_key<<<grid_size, block_size, 0, stream>>>(
-          sorted_keys.data<key_t>(), table_ids.data<int>(), key_flag_buffer_.data<uint32_t>(),
-          key_num.data<uint64_t>(), wgrad.unique_keys.data<key_t>(), wgrad.table_ids.data<int>(),
-          wgrad.num_unique_keys.data<uint64_t>(), dst_ids.data<uint32_t>());
+          sorted_keys.template data<key_t>(), table_ids.template data<int>(),
+          key_flag_buffer_.template data<uint32_t>(), key_num.template data<uint64_t>(),
+          wgrad.unique_keys.template data<key_t>(), wgrad.table_ids.template data<int>(),
+          wgrad.num_unique_keys.template data<uint64_t>(), dst_ids.template data<uint32_t>());
     }
   });
 }
@@ -802,13 +808,14 @@ void CalDstIds::operator()(core23::Tensor &sorted_keys, int num_table,
   const int grid_size =
       core->get_kernel_param().num_sms * core->get_kernel_param().max_thread_per_block / block_size;
   DISPATCH_INTEGRAL_FUNCTION_CORE23(key_type.type(), key_t, [&] {
-    get_ids_flag<<<grid_size, block_size, 0, stream>>>(
-        sorted_keys.data<key_t>(), table_range.data<int>(), num_table, dst_ids.data<uint32_t>());
+    get_ids_flag<<<grid_size, block_size, 0, stream>>>(sorted_keys.template data<key_t>(),
+                                                       table_range.template data<int>(), num_table,
+                                                       dst_ids.template data<uint32_t>());
   });
 
   cub::DeviceScan::InclusiveSum(cub_scan_temp_buffer_.data(), cub_scan_temp_bytes_,
-                                dst_ids.data<uint32_t>(), dst_ids.data<uint32_t>(), max_key_num_,
-                                stream);
+                                dst_ids.template data<uint32_t>(),
+                                dst_ids.template data<uint32_t>(), max_key_num_, stream);
 }
 
 void intra_partition_sort(SortKeyAndSrcIdOp sort_op, const PartitionedResult &partitioned_result,
@@ -856,14 +863,15 @@ void CalDstOffsetMP::operator()(Wgrad &wgrad, std::shared_ptr<CoreResourceManage
       core->get_kernel_param().num_sms * core->get_kernel_param().max_thread_per_block / block_size;
 
   get_dst_length_per_key<<<grid_size, block_size, 0, stream>>>(
-      wgrad.table_ids.data<int>(), wgrad.attr.table_id_to_ev_size.data<int>(),
-      wgrad.num_unique_keys.data<uint64_t>(), wgrad.ev_start_indices.data<uint32_t>());
+      wgrad.table_ids.template data<int>(), wgrad.attr.table_id_to_ev_size.template data<int>(),
+      wgrad.num_unique_keys.template data<uint64_t>(),
+      wgrad.ev_start_indices.template data<uint32_t>());
   size_t temp_bytes = cub_scan_temp_buffer_.num_bytes();
 
   size_t scan_num = wgrad.is_dynamic_allocate ? wgrad.h_unique_keys : max_key_num_;
   cub::DeviceScan::ExclusiveSum(cub_scan_temp_buffer_.data(), temp_bytes,
-                                wgrad.ev_start_indices.data<uint32_t>(),
-                                wgrad.ev_start_indices.data<uint32_t>(), scan_num, stream);
+                                wgrad.ev_start_indices.template data<uint32_t>(),
+                                wgrad.ev_start_indices.template data<uint32_t>(), scan_num, stream);
 }
 
 void unique_keys(SegmentdUnique &segmented_unique_kernel, ReductionIndices &reduction_indices,
@@ -885,7 +893,7 @@ void LocalReduceIndexCalculation::cal_for_sparse_input(const EmbeddingInput &emb
 
   if (embedding_input.h_num_keys == 0) {
     set_unique_key_num_to_zero<<<1, 1, 0, core_->get_local_gpu()->get_stream()>>>(
-        wgrad.num_unique_keys.data<uint64_t>());
+        wgrad.num_unique_keys.template data<uint64_t>());
 
     return;
   }

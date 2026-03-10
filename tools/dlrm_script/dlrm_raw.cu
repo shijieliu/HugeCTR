@@ -157,7 +157,7 @@ void process_kaggle_dataset(const std::string &input_dir_path, const std::string
         auto str_col = cudf::strings_column_view(col.view());
         int64_t num_strings = str_col.size();
         char *char_array = const_cast<char *>(str_col.chars_begin(cudf::get_default_stream()));
-        int32_t *offsets = const_cast<int32_t *>(str_col.offsets().data<int32_t>());
+        int32_t *offsets = const_cast<int32_t *>(str_col.offsets().template data<int32_t>());
 
         build_categorical_index<key_type, value_type><<<grid, block>>>(
             char_array, offsets, num_strings,
@@ -165,7 +165,7 @@ void process_kaggle_dataset(const std::string &input_dir_path, const std::string
             *categorical_col_hash_tables[cat_column_names[k]], hist_sizes[k], &accum_location[k]);
 
       } else if (col.type().id() == cudf::type_id::INT32) {
-        key_type *data = const_cast<key_type *>(col.view().data<key_type>());
+        key_type *data = const_cast<key_type *>(col.view().template data<key_type>());
         bitmask_type *in_mask = const_cast<bitmask_type *>(col.view().null_mask());
 
         build_categorical_index_from_ints<key_type, value_type><<<grid, block>>>(
@@ -518,7 +518,7 @@ void process_terabyte_dataset(const std::string &input_dir_path, const std::stri
           auto str_col = cudf::strings_column_view(col.view());
           int64_t num_strings = str_col.size();
           char *char_array = const_cast<char *>(str_col.chars_begin(cudf::get_default_stream()));
-          int32_t *offsets = const_cast<int32_t *>(str_col.offsets().data<int32_t>());
+          int32_t *offsets = const_cast<int32_t *>(str_col.offsets().template data<int32_t>());
 
           build_categorical_index<key_type, value_type><<<grid, block>>>(
               char_array, offsets, num_strings,
@@ -527,7 +527,7 @@ void process_terabyte_dataset(const std::string &input_dir_path, const std::stri
               *categorical_col_hash_tables[cat_column_names[k]], hist_sizes[k], &accum_location[k]);
 
         } else if (col.type().id() == cudf::type_id::INT32) {
-          key_type *data = const_cast<key_type *>(col.view().data<key_type>());
+          key_type *data = const_cast<key_type *>(col.view().template data<key_type>());
           bitmask_type *in_mask = const_cast<bitmask_type *>(col.view().null_mask());
 
           build_categorical_index_from_ints<key_type, value_type><<<grid, block>>>(

@@ -432,14 +432,14 @@ void LayerNormLayer<T>::fprop(bool is_train) {
 
   core23::Tensor& in_tensor = this->input_tensors_[0];
   core23::Tensor& out_tensor = this->output_tensors_[0];
-  T* in = in_tensor.data<T>();
-  T* out = out_tensor.data<T>();
+  T* in = in_tensor.template data<T>();
+  T* out = out_tensor.template data<T>();
 
-  T* gamma = gamma_.data<T>();
-  T* beta = beta_.data<T>();
+  T* gamma = gamma_.template data<T>();
+  T* beta = beta_.template data<T>();
 
-  T* result_save_mean = result_save_mean_.data<T>();
-  T* result_save_var = result_save_var_.data<T>();
+  T* result_save_mean = result_save_mean_.template data<T>();
+  T* result_save_var = result_save_var_.template data<T>();
 
   const auto& in_tensor_dim = in_tensor.shape();
   int64_t batch = 1;
@@ -465,16 +465,16 @@ void LayerNormLayer<T>::bprop() {
   core23::Tensor& out_tensor = this->output_tensors_[0];
   const auto& in_tensor_dim = in_tensor.shape();
 
-  T* in = in_tensor.data<T>();
-  T* out = out_tensor.data<T>();
+  T* in = in_tensor.template data<T>();
+  T* out = out_tensor.template data<T>();
 
-  T* gamma = gamma_.data<T>();
+  T* gamma = gamma_.template data<T>();
 
-  T* gamma_grad = gamma_grad_.data<T>();
-  T* beta_grad = beta_grad_.data<T>();
+  T* gamma_grad = gamma_grad_.template data<T>();
+  T* beta_grad = beta_grad_.template data<T>();
 
-  T* result_save_mean = result_save_mean_.data<T>();
-  T* result_save_var = result_save_var_.data<T>();
+  T* result_save_mean = result_save_mean_.template data<T>();
+  T* result_save_var = result_save_var_.template data<T>();
 
   int64_t batch = 1;
   int64_t hidden_dim = in_tensor_dim.size(in_tensor_dim.dims() - 1);

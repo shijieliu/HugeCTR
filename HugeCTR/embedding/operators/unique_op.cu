@@ -181,8 +181,8 @@ unique_op<KeyType, CounterType, empty_key, empty_val, hasher>::unique_op(
 
   // Initialization kernel, set all entry to unused <K,V>, set counter to init value
   init_kernel<KeyType, CounterType><<<((capacity_ - 1) / BLOCK_SIZE_) + 1, BLOCK_SIZE_>>>(
-      keys_.data<KeyType>(), vals_.data<CounterType>(), counter_.data<CounterType>(), capacity_,
-      empty_key, empty_val, init_counter_val_);
+      keys_.template data<KeyType>(), vals_.template data<CounterType>(),
+      counter_.template data<CounterType>(), capacity_, empty_key, empty_val, init_counter_val_);
 
   // Wait for initialization to finish
   HCTR_LIB_THROW(cudaStreamSynchronize(0));
@@ -210,15 +210,16 @@ void unique_op<KeyType, CounterType, empty_key, empty_val, hasher>::unique(
   // Launch get_insert kernel to do unique
   get_insert_kernel<KeyType, CounterType, hasher>
       <<<(len - 1) / BLOCK_SIZE_ + 1, BLOCK_SIZE_, 0, stream>>>(
-          d_key, d_unique_key, d_output_index, len, keys_.data<KeyType>(),
-          vals_.data<CounterType>(), capacity_, counter_.data<CounterType>(), empty_key, empty_val);
-  cudaMemcpyAsync(d_output_counter, counter_.data<CounterType>(), sizeof(CounterType),
+          d_key, d_unique_key, d_output_index, len, keys_.template data<KeyType>(),
+          vals_.template data<CounterType>(), capacity_, counter_.template data<CounterType>(),
+          empty_key, empty_val);
+  cudaMemcpyAsync(d_output_counter, counter_.template data<CounterType>(), sizeof(CounterType),
                   cudaMemcpyDeviceToDevice, stream);
   // Launch dump kernel
   // dump_kernel<KeyType, CounterType><<<(capacity_ - 1) / BLOCK_SIZE_ + 1, BLOCK_SIZE_, 0,
   // stream>>>(
-  //    d_unique_key, keys_.data<KeyType>(), vals_.data<CounterType>(), 0, capacity_,
-  //    d_output_counter, empty_key);
+  //    d_unique_key, keys_.template data<KeyType>(), vals_.template data<CounterType>(), 0,
+  //    capacity_, d_output_counter, empty_key);
 
   HCTR_LIB_THROW(cudaGetLastError());
 }
@@ -229,8 +230,9 @@ void unique_op<KeyType, CounterType, empty_key, empty_val, hasher>::clear(cudaSt
   // Initialization kernel, set all entry to unused <K,V>, set counter to init value
   init_kernel<KeyType, CounterType>
       <<<((capacity_ - 1) / BLOCK_SIZE_) + 1, BLOCK_SIZE_, 0, stream>>>(
-          keys_.data<KeyType>(), vals_.data<CounterType>(), counter_.data<CounterType>(), capacity_,
-          empty_key, empty_val, init_counter_val_);
+          keys_.template data<KeyType>(), vals_.template data<CounterType>(),
+          counter_.template data<CounterType>(), capacity_, empty_key, empty_val,
+          init_counter_val_);
 
   HCTR_LIB_THROW(cudaGetLastError());
 }

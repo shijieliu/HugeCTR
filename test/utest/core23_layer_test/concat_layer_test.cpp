@@ -106,7 +106,7 @@ void concat_layer_test(int64_t height, std::vector<int64_t> widths) {
   concat_layer.bprop();
   HCTR_LIB_THROW(cudaDeviceSynchronize());
   for (int64_t i = 0; i < n_ins; i++) {
-    core23::fill_sync(top_tensor.data<T>(), top_tensor.num_elements(),
+    core23::fill_sync(top_tensor.template data<T>(), top_tensor.num_elements(),
                       core23::TypeConverter<T, float>::value(0.f), top_tensor.device());
   }
   concat_layer.fprop(true);

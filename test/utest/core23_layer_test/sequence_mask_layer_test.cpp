@@ -97,9 +97,9 @@ void sequence_mask_test(int64_t batch_size, int max_sequence_len_from, int max_s
   SequenceMaskLayer<T> sequence_mask_layer(bottom_tensors, top_tensor, max_sequence_len_from,
                                            max_sequence_len_to, test::get_default_gpu());
 
-  auto* d_seq_len_from = bottom_tensors[0].data<T>();
-  auto* d_seq_len_to = bottom_tensors[1].data<T>();
-  auto* d_top = top_tensor.data<T>();
+  auto* d_seq_len_from = bottom_tensors[0].template data<T>();
+  auto* d_seq_len_to = bottom_tensors[1].template data<T>();
+  auto* d_top = top_tensor.template data<T>();
 
   std::vector<T> h_seq_len_from(in_size);
   std::vector<T> h_seq_len_to(in_size);

@@ -152,7 +152,7 @@ void DynamicEmbeddingTable::lookup(const core23::Tensor &keys, size_t num_keys,
     DISPATCH_INTEGRAL_FUNCTION_CORE23(keys.data_type().type(), key_t, [&] {
       auto table = cast_table<key_t, float>(table_);
 
-      table->lookup_unsafe(keys.data<key_t>(), (float **)emb_vec.data(), num_keys,
+      table->lookup_unsafe(keys.template data<key_t>(), (float **)emb_vec.data(), num_keys,
                            mapped_id_space_list.data(), id_space_offset_cpu.data(),
                            num_id_space_offset - 1, stream);
       HCTR_LIB_THROW(cudaStreamSynchronize(stream));
@@ -205,17 +205,18 @@ void DynamicEmbeddingTable::update(const core23::Tensor &unique_keys,
     // FIXME: use another buffer
     DISPATCH_INTEGRAL_FUNCTION_CORE23(unique_keys.data_type().type(), key_t, [&] {
       DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(wgrad.data_type().type(), wgrad_t, [&] {
-        wgrad_t *wgrad_ptr = const_cast<wgrad_t *>(wgrad.data<wgrad_t>());
+        wgrad_t *wgrad_ptr = const_cast<wgrad_t *>(wgrad.template data<wgrad_t>());
 
         switch (opt_param_.optimizer) {
           case HugeCTR::Optimizer_t::Ftrl: {
             auto table_opt_states = cast_table<key_t, float>(table_opt_states_);
-            table_opt_states->lookup_unsafe(
-                unique_keys.data<key_t>(), (float **)opt_state_view_->data(), num_unique_keys_cpu,
-                mapped_unique_table_ids.data(), table_range_cpu.data(), num_table, stream);
+            table_opt_states->lookup_unsafe(unique_keys.template data<key_t>(),
+                                            (float **)opt_state_view_->data(), num_unique_keys_cpu,
+                                            mapped_unique_table_ids.data(), table_range_cpu.data(),
+                                            num_table, stream);
 
             auto table = cast_table<key_t, float>(table_);
-            table->lookup_unsafe(unique_keys.data<key_t>(), (float **)weight_view_->data(),
+            table->lookup_unsafe(unique_keys.template data<key_t>(), (float **)weight_view_->data(),
                                  num_unique_keys_cpu, mapped_unique_table_ids.data(),
                                  table_range_cpu.data(), num_table, stream);
 
@@ -226,7 +227,7 @@ void DynamicEmbeddingTable::update(const core23::Tensor &unique_keys,
             const int grid_size = (static_cast<int64_t>(num_unique_keys_cpu) - 1) / block_size + 1;
 
             ftrl_update_grad_kernel<<<grid_size, block_size, 0, stream>>>(
-                ev_start_indices.data<uint32_t>(), num_unique_keys_cpu, opt_param_.lr,
+                ev_start_indices.template data<uint32_t>(), num_unique_keys_cpu, opt_param_.lr,
                 opt_param_.hyperparams.ftrl.lambda1, lambda2_plus_beta_div_lr,
                 (float **)opt_state_view_->data(), (float **)weight_view_->data(),
                 opt_param_.scaler, wgrad_ptr);
@@ -234,9 +235,10 @@ void DynamicEmbeddingTable::update(const core23::Tensor &unique_keys,
 
           case HugeCTR::Optimizer_t::Adam: {
             auto table_opt_states = cast_table<key_t, float>(table_opt_states_);
-            table_opt_states->lookup_unsafe(
-                unique_keys.data<key_t>(), (float **)opt_state_view_->data(), num_unique_keys_cpu,
-                mapped_unique_table_ids.data(), table_range_cpu.data(), num_table, stream);
+            table_opt_states->lookup_unsafe(unique_keys.template data<key_t>(),
+                                            (float **)opt_state_view_->data(), num_unique_keys_cpu,
+                                            mapped_unique_table_ids.data(), table_range_cpu.data(),
+                                            num_table, stream);
 
             ++opt_param_.hyperparams.adam.times;
             const float lr_scaled_bias = opt_param_.lr * opt_param_.hyperparams.adam.bias();
@@ -245,7 +247,7 @@ void DynamicEmbeddingTable::update(const core23::Tensor &unique_keys,
             const int grid_size = (static_cast<int64_t>(num_unique_keys_cpu) - 1) / block_size + 1;
 
             adam_update_grad_kernel<<<grid_size, block_size, 0, stream>>>(
-                ev_start_indices.data<uint32_t>(), num_unique_keys_cpu, lr_scaled_bias,
+                ev_start_indices.template data<uint32_t>(), num_unique_keys_cpu, lr_scaled_bias,
                 opt_param_.hyperparams.adam.beta1, opt_param_.hyperparams.adam.beta2,
                 (float **)opt_state_view_->data(), opt_param_.hyperparams.adam.epsilon,
                 opt_param_.scaler, wgrad_ptr);
@@ -253,60 +255,64 @@ void DynamicEmbeddingTable::update(const core23::Tensor &unique_keys,
 
           case HugeCTR::Optimizer_t::RMSProp: {
             auto table_opt_states = cast_table<key_t, float>(table_opt_states_);
-            table_opt_states->lookup_unsafe(
-                unique_keys.data<key_t>(), (float **)opt_state_view_->data(), num_unique_keys_cpu,
-                mapped_unique_table_ids.data(), table_range_cpu.data(), num_table, stream);
+            table_opt_states->lookup_unsafe(unique_keys.template data<key_t>(),
+                                            (float **)opt_state_view_->data(), num_unique_keys_cpu,
+                                            mapped_unique_table_ids.data(), table_range_cpu.data(),
+                                            num_table, stream);
 
             constexpr int block_size = 256;
             const int grid_size = (static_cast<int64_t>(num_unique_keys_cpu) - 1) / block_size + 1;
 
             rms_prop_update_grad_kernel<<<grid_size, block_size, 0, stream>>>(
-                ev_start_indices.data<uint32_t>(), num_unique_keys_cpu, opt_param_.lr,
+                ev_start_indices.template data<uint32_t>(), num_unique_keys_cpu, opt_param_.lr,
                 opt_param_.hyperparams.rmsprop.beta, (float **)opt_state_view_->data(),
                 opt_param_.hyperparams.rmsprop.epsilon, opt_param_.scaler, wgrad_ptr);
           } break;
 
           case HugeCTR::Optimizer_t::AdaGrad: {
             auto table_opt_states = cast_table<key_t, float>(table_opt_states_);
-            table_opt_states->lookup_unsafe(
-                unique_keys.data<key_t>(), (float **)opt_state_view_->data(), num_unique_keys_cpu,
-                mapped_unique_table_ids.data(), table_range_cpu.data(), num_table, stream);
+            table_opt_states->lookup_unsafe(unique_keys.template data<key_t>(),
+                                            (float **)opt_state_view_->data(), num_unique_keys_cpu,
+                                            mapped_unique_table_ids.data(), table_range_cpu.data(),
+                                            num_table, stream);
 
             constexpr int block_size = 256;
             const int grid_size = (static_cast<int64_t>(num_unique_keys_cpu) - 1) / block_size + 1;
 
             ada_grad_update_grad_kernel<<<grid_size, block_size, 0, stream>>>(
-                ev_start_indices.data<uint32_t>(), num_unique_keys_cpu, opt_param_.lr,
+                ev_start_indices.template data<uint32_t>(), num_unique_keys_cpu, opt_param_.lr,
                 (float **)opt_state_view_->data(), opt_param_.hyperparams.adagrad.epsilon,
                 opt_param_.scaler, wgrad_ptr);
           } break;
 
           case HugeCTR::Optimizer_t::MomentumSGD: {
             auto table_opt_states = cast_table<key_t, float>(table_opt_states_);
-            table_opt_states->lookup_unsafe(
-                unique_keys.data<key_t>(), (float **)opt_state_view_->data(), num_unique_keys_cpu,
-                mapped_unique_table_ids.data(), table_range_cpu.data(), num_table, stream);
+            table_opt_states->lookup_unsafe(unique_keys.template data<key_t>(),
+                                            (float **)opt_state_view_->data(), num_unique_keys_cpu,
+                                            mapped_unique_table_ids.data(), table_range_cpu.data(),
+                                            num_table, stream);
 
             constexpr int block_size = 256;
             const int grid_size = (static_cast<int64_t>(num_unique_keys_cpu) - 1) / block_size + 1;
 
             momentum_update_grad_kernel<<<grid_size, block_size, 0, stream>>>(
-                ev_start_indices.data<uint32_t>(), num_unique_keys_cpu, opt_param_.lr,
+                ev_start_indices.template data<uint32_t>(), num_unique_keys_cpu, opt_param_.lr,
                 opt_param_.hyperparams.momentum.factor, (float **)opt_state_view_->data(),
                 opt_param_.scaler, wgrad_ptr);
           } break;
 
           case HugeCTR::Optimizer_t::Nesterov: {
             auto table_opt_states = cast_table<key_t, float>(table_opt_states_);
-            table_opt_states->lookup_unsafe(
-                unique_keys.data<key_t>(), (float **)opt_state_view_->data(), num_unique_keys_cpu,
-                mapped_unique_table_ids.data(), table_range_cpu.data(), num_table, stream);
+            table_opt_states->lookup_unsafe(unique_keys.template data<key_t>(),
+                                            (float **)opt_state_view_->data(), num_unique_keys_cpu,
+                                            mapped_unique_table_ids.data(), table_range_cpu.data(),
+                                            num_table, stream);
 
             constexpr int block_size = 256;
             const int grid_size = (static_cast<int64_t>(num_unique_keys_cpu) - 1) / block_size + 1;
 
             nesterov_update_grad_kernel<<<grid_size, block_size, 0, stream>>>(
-                ev_start_indices.data<uint32_t>(), num_unique_keys_cpu, opt_param_.lr,
+                ev_start_indices.template data<uint32_t>(), num_unique_keys_cpu, opt_param_.lr,
                 opt_param_.hyperparams.nesterov.mu, (float **)opt_state_view_->data(),
                 opt_param_.scaler, wgrad_ptr);
           } break;
@@ -316,7 +322,7 @@ void DynamicEmbeddingTable::update(const core23::Tensor &unique_keys,
             const int grid_size = (static_cast<int64_t>(num_unique_keys_cpu) - 1) / block_size + 1;
 
             sgd_update_grad_kernel<<<grid_size, block_size, 0, stream>>>(
-                ev_start_indices.data<uint32_t>(), num_unique_keys_cpu, opt_param_.lr,
+                ev_start_indices.template data<uint32_t>(), num_unique_keys_cpu, opt_param_.lr,
                 opt_param_.scaler, wgrad_ptr);
           } break;
 
@@ -328,9 +334,9 @@ void DynamicEmbeddingTable::update(const core23::Tensor &unique_keys,
         // `scatter_add` automatically handles the offsets in `grad_ev_offset` using
         // the embedding vector dimensions given at construction.
         auto table = cast_table<key_t, float>(table_);
-        table->scatter_add(unique_keys.data<key_t>(), wgrad.data<float>(), num_unique_keys_cpu,
-                           mapped_unique_table_ids.data(), table_range_cpu.data(), num_table,
-                           stream);
+        table->scatter_add(unique_keys.template data<key_t>(), wgrad.template data<float>(),
+                           num_unique_keys_cpu, mapped_unique_table_ids.data(),
+                           table_range_cpu.data(), num_table, stream);
         HCTR_LIB_THROW(cudaStreamSynchronize(stream));
       });
     });
@@ -368,8 +374,8 @@ void DynamicEmbeddingTable::assign(const core23::Tensor &keys, size_t num_keys,
       // the embedding vector dimensions given at construction.
 
       auto table = cast_table<key_t, float>(table_);
-      table->scatter_update(keys.data<key_t>(), embeding_vector.data<float>(), num_keys,
-                            mapped_id_space_list.data(), id_space_offset_cpu.data(),
+      table->scatter_update(keys.template data<key_t>(), embeding_vector.template data<float>(),
+                            num_keys, mapped_id_space_list.data(), id_space_offset_cpu.data(),
                             num_table_offset - 1, stream);
       HCTR_LIB_THROW(cudaStreamSynchronize(stream));
     });
@@ -580,7 +586,7 @@ void DynamicEmbeddingTable::evict(const core23::Tensor &keys, size_t num_keys,
 
   DISPATCH_INTEGRAL_FUNCTION_CORE23(key_type_.type(), key_t, [&] {
     auto table = cast_table<key_t, float>(table_);
-    table->remove(keys.data<key_t>(), num_keys, mapped_id_space_list.data(),
+    table->remove(keys.template data<key_t>(), num_keys, mapped_id_space_list.data(),
                   id_space_offset_cpu.data(), num_id_space_offset, stream);
     HCTR_LIB_THROW(cudaStreamSynchronize(stream));
   });

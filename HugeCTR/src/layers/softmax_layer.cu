@@ -51,7 +51,7 @@ void SoftmaxLayer<T>::initialize() {
   CudaDeviceContext context(get_device_id());
 
   initialize_array<<<(hidden_size_ - 1) / 1024 + 1, 1024, 0, get_gpu().get_stream()>>>(
-      identity23_.data<T>(), hidden_size_, 1.0f);
+      identity23_.template data<T>(), hidden_size_, 1.0f);
 }
 
 template <>
@@ -59,7 +59,7 @@ void SoftmaxLayer<__half>::initialize() {
   CudaDeviceContext context(get_device_id());
 
   initialize_array<<<(hidden_size_ - 1) / 1024 + 1, 1024, 0, get_gpu().get_stream()>>>(
-      identity23_.data<__half>(), hidden_size_, __float2half(1.0f));
+      identity23_.template data<__half>(), hidden_size_, __float2half(1.0f));
 }
 
 template <typename T>
@@ -143,14 +143,14 @@ void SoftmaxLayer<T>::fprop(bool is_train) {
   core23::Tensor& output_tensor = output_tensors_[0];
   // exp(x_i)
   MLCommon::LinAlg::unaryOp(
-      output_tensor.data<T>(), input_tensor.data<T>(), len_,
+      output_tensor.template data<T>(), input_tensor.template data<T>(), len_,
       [] __device__(T in) { return expf(in); }, get_gpu().get_stream());
   // Get sum of exp(x_i) i=[0, embedding_vector_size-1].
-  MLCommon::LinAlg::reduce(workspace23_.data<T>(), output_tensor.data<T>(), hidden_size_, n_rows_,
-                           T(0), true, true, get_gpu().get_stream());
+  MLCommon::LinAlg::reduce(workspace23_.template data<T>(), output_tensor.template data<T>(),
+                           hidden_size_, n_rows_, T(0), true, true, get_gpu().get_stream());
   // Softmax exp(x_i) / sum(exp)(x_i)) i=[0, embedding_vector_size-1].
-  Softmax_fprop(output_tensor.data<T>(), workspace23_.data<T>(), n_rows_, hidden_size_,
-                get_gpu().get_stream());
+  Softmax_fprop(output_tensor.template data<T>(), workspace23_.template data<T>(), n_rows_,
+                hidden_size_, get_gpu().get_stream());
   HCTR_LIB_THROW(cudaMemcpyAsync(softmax_out23_.data(), output_tensor.data(),
                                  output_tensor.num_bytes(), cudaMemcpyDeviceToDevice,
                                  get_gpu().get_stream()));
@@ -167,7 +167,7 @@ void SoftmaxLayer<__half>::fprop(bool is_train) {
   const __half beta = __float2half(0.0f);
   // exp(x_i)
   MLCommon::LinAlg::unaryOp(
-      output_tensor.data<__half>(), input_tensor.data<__half>(), len_,
+      output_tensor.template data<__half>(), input_tensor.template data<__half>(), len_,
       [] __device__(__half in) { return hexp(in); }, get_gpu().get_stream());
   // Get sum of exp(x_i) i=[0, embedding_vector_size-1]
   HCTR_LIB_THROW(cublasGemmEx(
@@ -175,8 +175,8 @@ void SoftmaxLayer<__half>::fprop(bool is_train) {
       output_tensor.data(), CUDA_R_16F, hidden_size_, identity23_.data(), CUDA_R_16F, hidden_size_,
       &beta, workspace23_.data(), CUDA_R_16F, n_rows_, CUDA_R_16F, CUBLAS_GEMM_DEFAULT));
   // Softmax exp(x_i) / sum(exp)(x_i)) i=[0, embedding_vector_size-1]
-  Softmax_fprop(output_tensor.data<__half>(), workspace23_.data<__half>(), n_rows_, hidden_size_,
-                get_gpu().get_stream());
+  Softmax_fprop(output_tensor.template data<__half>(), workspace23_.template data<__half>(),
+                n_rows_, hidden_size_, get_gpu().get_stream());
   HCTR_LIB_THROW(cudaMemcpyAsync(softmax_out23_.data(), output_tensor.data(),
                                  output_tensor.num_bytes(), cudaMemcpyDeviceToDevice,
                                  get_gpu().get_stream()));
@@ -189,8 +189,8 @@ void SoftmaxLayer<T>::bprop() {
   core23::Tensor& bottom_tensor = input_tensors_[0];
   core23::Tensor& top_tensor = output_tensors_[0];
 
-  Softmax_bprop(top_tensor.data<T>(), bottom_tensor.data<T>(), softmax_out23_.data<T>(), n_rows_,
-                hidden_size_, get_gpu().get_stream());
+  Softmax_bprop(top_tensor.template data<T>(), bottom_tensor.template data<T>(),
+                softmax_out23_.template data<T>(), n_rows_, hidden_size_, get_gpu().get_stream());
 }
 
 template <>
@@ -200,8 +200,9 @@ void SoftmaxLayer<__half>::bprop() {
   core23::Tensor& bottom_tensor = input_tensors_[0];
   core23::Tensor& top_tensor = output_tensors_[0];
 
-  Softmax_bprop(top_tensor.data<__half>(), bottom_tensor.data<__half>(),
-                softmax_out23_.data<__half>(), n_rows_, hidden_size_, get_gpu().get_stream());
+  Softmax_bprop(top_tensor.template data<__half>(), bottom_tensor.template data<__half>(),
+                softmax_out23_.template data<__half>(), n_rows_, hidden_size_,
+                get_gpu().get_stream());
 }
 
 template class SoftmaxLayer<float>;

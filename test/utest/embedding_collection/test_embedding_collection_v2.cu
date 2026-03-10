@@ -221,7 +221,7 @@ template <typename EmbType>
 void generate_device_top_grads(core23::Tensor &tensor) {
   curandState *d_state;
   HCTR_LIB_THROW(cudaMalloc(&d_state, sizeof(curandState) * tensor.num_elements()));
-  generate_random_decimal_kernel<<<1024, 1024>>>(d_state, tensor.data<EmbType>(),
+  generate_random_decimal_kernel<<<1024, 1024>>>(d_state, tensor.template data<EmbType>(),
                                                  tensor.num_elements());
   HCTR_LIB_THROW(cudaFree(d_state));
 }

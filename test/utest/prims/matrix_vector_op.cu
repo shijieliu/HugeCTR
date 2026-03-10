@@ -95,8 +95,7 @@ void matrixVectorOpLaunch2(T *out, const T *in, const T *vec1, IdxType D, IdxTyp
       out, in, vec1, D, N, rowMajor, bcastAlongRows, [] __device__(T a, T b) { return a + b; },
       stream);
 
-  unaryOp(
-      out, out, D * N, [] __device__(T in) { return (in < 0) ? 0 : in; }, stream);
+  unaryOp(out, out, D * N, [] __device__(T in) { return (in < 0) ? 0 : in; }, stream);
 }
 
 template <typename T, typename IdxType>

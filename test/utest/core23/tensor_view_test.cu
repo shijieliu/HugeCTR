@@ -87,8 +87,8 @@ void tensor_view_test_impl() {
                 output_tensor_3d.num_elements());
 
     EXPECT_FALSE(input_tensor_3d.data() == &input_tensor_view[0][0][0]);
-    EXPECT_TRUE(input_tensor_3d.data<int>() + (OFFSET_Z * (INPUT_SIZE_Y * INPUT_SIZE_X) +
-                                               (OFFSET_Y * INPUT_SIZE_X) + OFFSET_X) ==
+    EXPECT_TRUE(input_tensor_3d.template data<int>() + (OFFSET_Z * (INPUT_SIZE_Y * INPUT_SIZE_X) +
+                                                        (OFFSET_Y * INPUT_SIZE_X) + OFFSET_X) ==
                 &input_tensor_view[0][0][0]);
     EXPECT_TRUE(output_tensor_3d.data() == &output_tensor_view[0][0][0]);
 
@@ -160,7 +160,7 @@ void tensor_view_test_impl() {
                 output_tensor_2d.num_elements());
 
     EXPECT_FALSE(input_tensor_2d.data() == &input_tensor_view[0][0]);
-    EXPECT_TRUE(input_tensor_2d.data<int>() + (OFFSET_Y * INPUT_SIZE_X + OFFSET_X) ==
+    EXPECT_TRUE(input_tensor_2d.template data<int>() + (OFFSET_Y * INPUT_SIZE_X + OFFSET_X) ==
                 &input_tensor_view[0][0]);
     EXPECT_TRUE(output_tensor_2d.data() == &output_tensor_view[0][0]);
 

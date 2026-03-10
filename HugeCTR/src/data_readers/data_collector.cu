@@ -54,12 +54,13 @@ void split(core23::Tensor& label_tensor, core23::Tensor& dense_tensor,
 
   if (dense_dim > 0) {
     split_kernel__<<<GRID_DIM, BLOCK_DIM, 0, stream>>>(
-        batchsize, label_tensor.data<float>(), label_dim, dense_tensor.data<TypeComp>(), dense_dim,
-        label_dense_buffer.data<float>(), label_dense_dim);
+        batchsize, label_tensor.template data<float>(), label_dim,
+        dense_tensor.template data<TypeComp>(), dense_dim,
+        label_dense_buffer.template data<float>(), label_dense_dim);
   } else if (dense_dim == 0) {
     split_kernel__<<<GRID_DIM, BLOCK_DIM, 0, stream>>>(
-        batchsize, label_tensor.data<float>(), label_dim, (TypeComp*)0, 0,
-        label_dense_buffer.data<float>(), label_dense_dim);
+        batchsize, label_tensor.template data<float>(), label_dim, (TypeComp*)0, 0,
+        label_dense_buffer.template data<float>(), label_dense_dim);
 
   } else {
     HCTR_OWN_THROW(Error_t::WrongInput, "dense_dim < 0");
@@ -117,8 +118,8 @@ void broadcast(const std::shared_ptr<ThreadBuffer23>& thread_buffer,
     auto dst_dense_tensor = broadcast_buffer->dense_tensors[i];
     auto src_dense_tensor = thread_buffer->device_dense_buffers;
     HCTR_LIB_THROW(cudaMemcpyAsync(
-        dst_dense_tensor.data<float>(),
-        src_dense_tensor.data<float>() + i * batch_size_per_gpu * (label_dim + dense_dim),
+        dst_dense_tensor.template data<float>(),
+        src_dense_tensor.template data<float>() + i * batch_size_per_gpu * (label_dim + dense_dim),
         batch_size_per_gpu * (label_dim + dense_dim) * sizeof(float), cudaMemcpyDeviceToDevice,
         local_gpu->get_p2p_stream()));
     HCTR_LIB_THROW(cudaStreamSynchronize(local_gpu->get_p2p_stream()));

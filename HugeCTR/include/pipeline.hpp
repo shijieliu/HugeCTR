@@ -31,7 +31,7 @@ class Scheduleable {
  public:
   virtual ~Scheduleable() = default;
 
-  virtual void init(std::shared_ptr<GPUResource> gpu){};
+  virtual void init(std::shared_ptr<GPUResource> gpu) {};
 
   virtual void run(std::shared_ptr<GPUResource> gpu, bool use_graph) = 0;
 };

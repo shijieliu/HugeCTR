@@ -91,8 +91,7 @@ __forceinline__ __device__ void warp_lock_mutex(const cg::thread_block_tile<warp
                                                 volatile int& set_mutex) {
   // The first thread of this (sub-)warp to acquire the lock
   if (warp_tile.thread_rank() == 0) {
-    while (0 == atomicCAS((int*)&set_mutex, 1, 0))
-      ;
+    while (0 == atomicCAS((int*)&set_mutex, 1, 0));
   }
   __threadfence();
   warp_tile.sync();  // Synchronize the threads in the (sub-)warp. Execution barrier + memory fence

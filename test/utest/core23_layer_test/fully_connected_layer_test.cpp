@@ -97,12 +97,12 @@ static void fully_connected_layer_test(int64_t m, int64_t n, int64_t k, float to
       cudaMemset(weights_grad_view.data(), 0.0, sizeof(float) * weights_grad_view.size(0)));
 
   // TODO: result check
-  float *d_weight = weights_container[0].data<float>();
-  float *d_bias = weights_container[1].data<float>();
-  float *d_weight_grad = weights_grad_container[0].data<float>();
-  float *d_bias_grad = weights_grad_container[1].data<float>();
-  float *d_in = in_tensor.data<float>();
-  float *d_out = out_tensor.data<float>();
+  float *d_weight = weights_container[0].template data<float>();
+  float *d_bias = weights_container[1].template data<float>();
+  float *d_weight_grad = weights_grad_container[0].template data<float>();
+  float *d_bias_grad = weights_grad_container[1].template data<float>();
+  float *d_in = in_tensor.template data<float>();
+  float *d_out = out_tensor.template data<float>();
 
   std::unique_ptr<float[]> h_weight(new float[test::align_to_even(n * k)]);
   std::unique_ptr<float[]> h_weight_grad(new float[n * k]);
@@ -196,12 +196,12 @@ static void fully_connected_layer_test_3d(int64_t batch_size, int64_t seq_len, i
       cudaMemset(weights_grad_view.data(), 0.0, sizeof(float) * weights_grad_view.size(0)));
 
   // TODO: result check
-  float *d_weight = weights_container[0].data<float>();
-  float *d_bias = weights_container[1].data<float>();
-  float *d_weight_grad = weights_grad_container[0].data<float>();
-  float *d_bias_grad = weights_grad_container[1].data<float>();
-  float *d_in = in_tensor.data<float>();
-  float *d_out = out_tensor.data<float>();
+  float *d_weight = weights_container[0].template data<float>();
+  float *d_bias = weights_container[1].template data<float>();
+  float *d_weight_grad = weights_grad_container[0].template data<float>();
+  float *d_bias_grad = weights_grad_container[1].template data<float>();
+  float *d_in = in_tensor.template data<float>();
+  float *d_out = out_tensor.template data<float>();
 
   std::unique_ptr<float[]> h_weight(new float[test::align_to_even(n * k)]);
   std::unique_ptr<float[]> h_weight_grad(new float[n * k]);

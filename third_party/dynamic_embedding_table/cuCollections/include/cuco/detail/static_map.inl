@@ -138,8 +138,8 @@ static_map<Key, Element, Initializer>::device_mutable_view::lookup_or_insert(
 template <typename Key, typename Element, typename Initializer>
 template <typename CG, typename Hash>
 __device__ auto static_map<Key, Element, Initializer>::device_mutable_view::lookup_or_insert_unsafe(
-    CG const &g, key_type const &lookup_or_insert_key, Hash hash) noexcept
-    -> std::pair<element_type *, insert_result> {
+    CG const &g, key_type const &lookup_or_insert_key,
+    Hash hash) noexcept -> std::pair<element_type *, insert_result> {
   auto current_slot = initial_slot(g, lookup_or_insert_key, hash);
 
   while (true) {

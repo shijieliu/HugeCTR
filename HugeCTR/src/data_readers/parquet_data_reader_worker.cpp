@@ -238,11 +238,12 @@ void ParquetDataReaderWorker<T>::read_a_batch() {
       }
       nvtxRangePushA("convert_parquet_dense_columns");
       convert_parquet_dense_columns(dense_column_data_ptr, num_label_dense,
-                                    device_memory_dense_dim_array_.data<int64_t>(), label_dense_dim,
-                                    samples_to_be_transposed, dense_start, dense_end,
+                                    device_memory_dense_dim_array_.template data<int64_t>(),
+                                    label_dense_dim, samples_to_be_transposed, dense_start,
+                                    dense_end,
                                     reinterpret_cast<dtype_dense*>(dst_dense_tensor.data()),
-                                    host_memory_pointer_staging_.data<int64_t>(), rmm_buffers,
-                                    memory_resource_.get(), dense_stream_);
+                                    host_memory_pointer_staging_.template data<int64_t>(),
+                                    rmm_buffers, memory_resource_.get(), dense_stream_);
       nvtxRangePop();
       {
         const int num_csr_buffers = param_num;
@@ -322,9 +323,9 @@ void ParquetDataReaderWorker<T>::read_a_batch() {
           HCTR_LIB_THROW(cudaStreamSynchronize(task_stream_));
           int64_t nnz = -1;
           if (offset_datatype.size() == 4) {
-            nnz = static_cast<int64_t>(*(host_pinned_csr_inc_.data<int32_t>()));
+            nnz = static_cast<int64_t>(*(host_pinned_csr_inc_.template data<int32_t>()));
           } else {
-            nnz = static_cast<int64_t>(*(host_pinned_csr_inc_.data<int64_t>()));
+            nnz = static_cast<int64_t>(*(host_pinned_csr_inc_.template data<int64_t>()));
           }
           *dst_sparse_tensor.get_nnz_ptr() = nnz;
         }

@@ -184,7 +184,7 @@ GRULayer<T>::GRULayer(const core23::Tensor& in_tensor, const core23::Tensor& out
   }
 }
 
-//#define KERAS_CHECK
+// #define KERAS_CHECK
 template <typename T>
 void GRULayer<T>::fprop(bool is_train) {
   CudaDeviceContext context(this->get_device_id());
@@ -195,8 +195,8 @@ void GRULayer<T>::fprop(bool is_train) {
   T* weight = this->get_weight(0).template data<T>();
   T* hx = this->get_weight(1).template data<T>();
 
-  T* in = in_tensor.data<T>();
-  T* out = out_tensor.data<T>();
+  T* in = in_tensor.template data<T>();
+  T* out = out_tensor.template data<T>();
 
 #ifdef KERAS_CHECK
   cudnnTensorDescriptor_t wDesc;
@@ -296,8 +296,8 @@ void GRULayer<T>::bprop() {
   core23::Tensor& out_tensor = this->output_tensors_[0];
 
   T* weight = this->get_weight(0).template data<T>();
-  T* in = in_tensor.data<T>();
-  T* out = out_tensor.data<T>();
+  T* in = in_tensor.template data<T>();
+  T* out = out_tensor.template data<T>();
   T* dx = this->get_wgrad(0).template data<T>();
   T* dy = this->get_wgrad(1).template data<T>();
   T* dhx = this->get_wgrad(2).template data<T>();

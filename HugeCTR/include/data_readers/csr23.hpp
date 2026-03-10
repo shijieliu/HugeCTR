@@ -80,8 +80,8 @@ class CSR23 {
     value_tensor_ = core23::Tensor(core23::Shape({static_cast<int64_t>(max_value_size)}),
                                    core23::ToScalarType<T>::value, common_tensor_params);
     // allocate eagerly
-    row_offset_ptr_ = row_offset_tensor_.data<T>();
-    value_ptr_ = value_tensor_.data<T>();
+    row_offset_ptr_ = row_offset_tensor_.template data<T>();
+    value_ptr_ = value_tensor_.template data<T>();
   }
   CSR23(const CSR23&) = delete;
   CSR23& operator=(const CSR23&) = delete;

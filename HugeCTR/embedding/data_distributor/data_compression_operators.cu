@@ -370,8 +370,8 @@ void PartitionAndUniqueOperator::fill_continuous_bucket_ids(const DataDistributi
                                                             int batch_size, cudaStream_t stream) {
   if (last_batch_size_ == batch_size) return;
   HCTR_CHECK(h_num_bucket_ids.data_type() == core23::ScalarType::UInt64);
-  HCTR_LIB_THROW(
-      cudaMemsetAsync(h_num_bucket_ids.data<uint64_t>(), 0, h_num_bucket_ids.num_bytes(), stream));
+  HCTR_LIB_THROW(cudaMemsetAsync(h_num_bucket_ids.template data<uint64_t>(), 0,
+                                 h_num_bucket_ids.num_bytes(), stream));
 
   auto &kernel_param = core_->get_kernel_param();
 
@@ -379,13 +379,13 @@ void PartitionAndUniqueOperator::fill_continuous_bucket_ids(const DataDistributi
     auto bucket_range_ptrs = input.get_dp_bucket_range_pointer_ptr<BucketRangeType>();
     int block_size = std::min((int)d_lookup_ids_.num_elements(), kernel_param.max_thread_per_block);
     count_num_bucket_ids_kernel<<<1, block_size, 0, stream>>>(
-        bucket_range_ptrs, batch_size_per_gpu_, d_lookup_ids_.data<int>(),
-        d_lookup_ids_.num_elements(), h_num_bucket_ids.data<uint64_t>());
+        bucket_range_ptrs, batch_size_per_gpu_, d_lookup_ids_.template data<int>(),
+        d_lookup_ids_.num_elements(), h_num_bucket_ids.template data<uint64_t>());
   });
 
   HCTR_LIB_THROW(cudaStreamSynchronize(stream));
 
-  uint64_t num_keys = *h_num_bucket_ids.data<uint64_t>();
+  uint64_t num_keys = *h_num_bucket_ids.template data<uint64_t>();
 
   int block_size = kernel_param.max_thread_per_block;
   int grid_size = ceildiv(num_keys, (uint64_t)block_size);
@@ -396,8 +396,8 @@ void PartitionAndUniqueOperator::fill_continuous_bucket_ids(const DataDistributi
     auto bucket_range_ptrs = input.get_dp_bucket_range_pointer_ptr<BucketRangeType>();
 
     generate_sequence_kernel<<<grid_size, block_size, smem_bytes, stream>>>(
-        bucket_range_ptrs, d_lookup_ids_.data<int>(), d_lookup_ids_.num_elements(),
-        batch_size_per_gpu_, bucket_ids.data<BucketRangeType>(), num_keys);
+        bucket_range_ptrs, d_lookup_ids_.template data<int>(), d_lookup_ids_.num_elements(),
+        batch_size_per_gpu_, bucket_ids.template data<BucketRangeType>(), num_keys);
   });
   last_batch_size_ = batch_size;
 }
@@ -408,8 +408,8 @@ void PartitionAndUniqueOperator::fill_continuous_bucket_ids_for_reduction(
   if (last_batch_size_ == batch_size) return;
 
   HCTR_CHECK(h_num_bucket_ids.data_type() == core23::ScalarType::UInt64);
-  HCTR_LIB_THROW(
-      cudaMemsetAsync(h_num_bucket_ids.data<uint64_t>(), 0, h_num_bucket_ids.num_bytes(), stream));
+  HCTR_LIB_THROW(cudaMemsetAsync(h_num_bucket_ids.template data<uint64_t>(), 0,
+                                 h_num_bucket_ids.num_bytes(), stream));
 
   auto &kernel_param = core_->get_kernel_param();
 
@@ -417,13 +417,13 @@ void PartitionAndUniqueOperator::fill_continuous_bucket_ids_for_reduction(
     auto bucket_range_ptrs = input.get_dp_bucket_range_pointer_ptr<BucketRangeType>();
     int block_size = std::min((int)d_lookup_ids_.num_elements(), kernel_param.max_thread_per_block);
     count_num_bucket_ids_kernel<<<1, block_size, 0, stream>>>(
-        bucket_range_ptrs, batch_size_per_gpu_, d_lookup_ids_.data<int>(),
-        d_lookup_ids_.num_elements(), h_num_bucket_ids.data<uint64_t>());
+        bucket_range_ptrs, batch_size_per_gpu_, d_lookup_ids_.template data<int>(),
+        d_lookup_ids_.num_elements(), h_num_bucket_ids.template data<uint64_t>());
   });
 
   HCTR_LIB_THROW(cudaStreamSynchronize(stream));
 
-  uint64_t num_keys = *h_num_bucket_ids.data<uint64_t>();
+  uint64_t num_keys = *h_num_bucket_ids.template data<uint64_t>();
 
   int block_size = kernel_param.max_thread_per_block;
   int grid_size = ceildiv(num_keys, (uint64_t)block_size);
@@ -433,8 +433,8 @@ void PartitionAndUniqueOperator::fill_continuous_bucket_ids_for_reduction(
 
     auto bucket_range_ptrs = input.get_dp_bucket_range_pointer_ptr<BucketRangeType>();
     generate_sequence_kernel_for_reduction<<<grid_size, block_size, smem_bytes, stream>>>(
-        bucket_range_ptrs, d_lookup_ids_.data<int>(), d_lookup_ids_.num_elements(),
-        batch_size_per_gpu_, bucket_ids.data<BucketRangeType>(), num_keys);
+        bucket_range_ptrs, d_lookup_ids_.template data<int>(), d_lookup_ids_.num_elements(),
+        batch_size_per_gpu_, bucket_ids.template data<BucketRangeType>(), num_keys);
   });
   last_batch_size_ = batch_size;
 }
@@ -451,8 +451,8 @@ void PartitionAndUniqueOperator::partition_and_unique_on_dp_input(
       auto dp_bucket_range_ptrs = input.get_dp_bucket_range_pointer_ptr<BucketRangeType>();
 
       cal_range_on_selected_lookup_ids_kernel<<<1, 1, 0, stream>>>(
-          dp_bucket_range_ptrs, d_lookup_ids_.data<int>(), num_local_lookup_, batch_size_per_gpu_,
-          range_on_lookup_ids.data<BucketRangeType>());
+          dp_bucket_range_ptrs, d_lookup_ids_.template data<int>(), num_local_lookup_,
+          batch_size_per_gpu_, range_on_lookup_ids.template data<BucketRangeType>());
 
       HCTR_LIB_THROW(cudaMemsetAsync(
           compressed_data.partitioned_data.d_num_key_per_partition.data(), 0,
@@ -463,7 +463,7 @@ void PartitionAndUniqueOperator::partition_and_unique_on_dp_input(
 
       CompressedDataView<KeyType, BucketRangeType> compressed_data_view{
           compressed_data.partitioned_data.view<KeyType, BucketRangeType>(),
-          compressed_data.reverse_idx.data<BucketRangeType>()};
+          compressed_data.reverse_idx.template data<BucketRangeType>()};
 
       auto &kernel_param = core_->get_kernel_param();
       int block_size = 512;
@@ -474,9 +474,9 @@ void PartitionAndUniqueOperator::partition_and_unique_on_dp_input(
       UniqueTableView<KeyType, BucketRangeType, partitioner_view_type> hash_table{
           (TableEntry<KeyType> *)hash_table_storage_.data(), table_capacity_, partitioner_view};
       partition_and_unique_kernel<<<grid_size, block_size, 0, stream>>>(
-          dp_keys_ptrs, dp_bucket_range_ptrs, d_lookup_ids_.data<int>(),
-          range_on_lookup_ids.data<BucketRangeType>(), num_local_lookup_, batch_size_per_gpu_,
-          hash_table, compressed_data_view);
+          dp_keys_ptrs, dp_bucket_range_ptrs, d_lookup_ids_.template data<int>(),
+          range_on_lookup_ids.template data<BucketRangeType>(), num_local_lookup_,
+          batch_size_per_gpu_, hash_table, compressed_data_view);
     });
   });
 }
@@ -508,7 +508,7 @@ void PartitionAndUniqueOperator::partition_and_unique_by_table_id(
           (TableEntry<KeyType> *)hash_table_storage_.data(), table_capacity_, identity_partitioner};
       CompressedDataView<KeyType, BucketRangeType> compressed_data_view{
           compressed_data.partitioned_data.view<KeyType, BucketRangeType>(),
-          compressed_data.reverse_idx.data<BucketRangeType>()};
+          compressed_data.reverse_idx.template data<BucketRangeType>()};
 
       auto &kernel_param = core_->get_kernel_param();
       int grid_size = kernel_param.num_sms *
@@ -516,8 +516,8 @@ void PartitionAndUniqueOperator::partition_and_unique_by_table_id(
       int block_size = kernel_param.max_thread_per_block;
 
       partition_and_unique_kernel<<<grid_size, block_size, 0, stream>>>(
-          keys_gpu_major.data<KeyType>(), feature_ids_gpu_major.data<int>(),
-          table_partitioner.lookup_id_to_local_table_id.data<int>(), num_keys, hash_table,
+          keys_gpu_major.template data<KeyType>(), feature_ids_gpu_major.template data<int>(),
+          table_partitioner.lookup_id_to_local_table_id.template data<int>(), num_keys, hash_table,
           compressed_data_view);
     });
   });
@@ -555,8 +555,9 @@ void CompactPartitionDataOperator::operator()(const PartitionedData &partitioned
     size_t temp_storage_nbytes = d_scan_num_key_per_table_temp_storage.num_bytes();
     cub::DeviceScan::InclusiveSum(
         d_scan_num_key_per_table_temp_storage.data(), temp_storage_nbytes,
-        partitioned_data.d_num_key_per_partition.data<BucketRangeType>(),
-        compacted_partition_data.num_key_per_table.data<BucketRangeType>() + 1, num_table, stream);
+        partitioned_data.d_num_key_per_partition.template data<BucketRangeType>(),
+        compacted_partition_data.num_key_per_table.template data<BucketRangeType>() + 1, num_table,
+        stream);
   });
 
   DISPATCH_INTEGRAL_FUNCTION_CORE23(key_type.type(), KeyType, [&] {
@@ -570,13 +571,13 @@ void CompactPartitionDataOperator::operator()(const PartitionedData &partitioned
           compacted_partition_data.num_key_per_table.num_elements() * sizeof(uint32_t);
 
       compact_keys_kernel<<<grid_size, block_size, smem_bytes, stream>>>(
-          partitioned_data.partitioned_keys.data<KeyType>(),
+          partitioned_data.partitioned_keys.template data<KeyType>(),
           partitioned_data.partitioned_keys.num_elements(),
           partitioned_data.max_num_key_per_partition,
-          compacted_partition_data.num_key_per_table.data<BucketRangeType>(),
+          compacted_partition_data.num_key_per_table.template data<BucketRangeType>(),
           compacted_partition_data.num_key_per_table.num_elements(),
-          compacted_partition_data.keys.data<KeyType>(),
-          compacted_partition_data.h_num_keys.data<uint64_t>());
+          compacted_partition_data.keys.template data<KeyType>(),
+          compacted_partition_data.h_num_keys.template data<uint64_t>());
     });
   });
   HCTR_LIB_THROW(cudaStreamSynchronize(stream));
@@ -599,10 +600,10 @@ void CompressReverseIdxRangeOperator::operator()(size_t num_bucket_ids,
         compressed_data.partitioned_data.d_num_key_per_partition.num_elements() * sizeof(uint64_t);
 
     compress_reverse_idx_range_kernel<<<grid_size, block_size, smem_bytes, stream>>>(
-        compressed_data.partitioned_data.d_num_key_per_partition.data<BucketRangeType>(),
+        compressed_data.partitioned_data.d_num_key_per_partition.template data<BucketRangeType>(),
         compressed_data.partitioned_data.d_num_key_per_partition.num_elements(),
         compressed_data.partitioned_data.max_num_key_per_partition,
-        compressed_data.reverse_idx.data<BucketRangeType>(), num_bucket_ids);
+        compressed_data.reverse_idx.template data<BucketRangeType>(), num_bucket_ids);
   });
 }
 

@@ -147,12 +147,12 @@ template <typename T>
 void AddLayer<T>::fprop(bool is_train) {
   CudaDeviceContext context(get_device_id());
 
-  T* output = output_tensors_[0].data<T>();
+  T* output = output_tensors_[0].template data<T>();
 
   dim3 block_size(256, 1, 1);
   dim3 grid_size((size_ + block_size.x - 1) / block_size.x, 1, 1);
   add_kernel<<<grid_size, block_size, 0, get_gpu().get_stream()>>>(
-      input_tensor_ptr_.data<T*>(), output, size_,
+      input_tensor_ptr_.template data<T*>(), output, size_,
       static_cast<int>(input_tensor_ptr_.num_elements()));
 }
 
@@ -160,12 +160,12 @@ template <typename T>
 void AddLayer<T>::bprop() {
   CudaDeviceContext context(get_device_id());
 
-  T* output = output_tensors_[0].data<T>();
+  T* output = output_tensors_[0].template data<T>();
 
   dim3 block_size(256, 1, 1);
   dim3 grid_size((size_ + block_size.x - 1) / block_size.x, 1, 1);
   add_dgrad_kernel<<<grid_size, block_size, 0, get_gpu().get_stream()>>>(
-      output, input_tensor_ptr_.data<T*>(), size_,
+      output, input_tensor_ptr_.template data<T*>(), size_,
       static_cast<int>(input_tensor_ptr_.num_elements()));
 }
 

@@ -178,7 +178,7 @@ void ElementwiseMultiplyLayer<T>::initialize() {
 
   for (int64_t i = 0; i < num_; i++) {
     // data address
-    uint64_t* to_write = h_inputs_.data<uint64_t>() + i;
+    uint64_t* to_write = h_inputs_.template data<uint64_t>() + i;
     *to_write = reinterpret_cast<uint64_t>(input_tensors_[i].data());
   }
   HCTR_LIB_THROW(cudaMemcpyAsync((void*)d_inputs_.data(), (void*)h_inputs_.data(),
@@ -190,12 +190,12 @@ void ElementwiseMultiplyLayer<T>::initialize() {
 template <typename T>
 void ElementwiseMultiplyLayer<T>::fprop(bool is_train) {
   CudaDeviceContext context(get_device_id());
-  T* output = output_tensors_[0].data<T>();
+  T* output = output_tensors_[0].template data<T>();
 
   dim3 blockSize(256, 1, 1);
   dim3 gridSize((size_ + blockSize.x - 1) / blockSize.x, 1, 1);
   elementwise_multiply_kernel<<<gridSize, blockSize, 0, get_gpu().get_stream()>>>(
-      d_inputs_.data<T*>(), output, size_, num_);
+      d_inputs_.template data<T*>(), output, size_, num_);
 
   HCTR_LIB_THROW(cudaMemcpyAsync((void*)fprop_output_.data(), (void*)output,
                                  output_tensors_[0].num_bytes(), cudaMemcpyDeviceToDevice,
@@ -205,12 +205,12 @@ void ElementwiseMultiplyLayer<T>::fprop(bool is_train) {
 template <>
 void ElementwiseMultiplyLayer<__half>::fprop(bool is_train) {
   CudaDeviceContext context(get_device_id());
-  __half* output = output_tensors_[0].data<__half>();
+  __half* output = output_tensors_[0].template data<__half>();
 
   dim3 blockSize(256, 1, 1);
   dim3 gridSize((size_ / 2 + blockSize.x - 1) / blockSize.x, 1, 1);
   elementwise_multiply_kernel<<<gridSize, blockSize, 0, get_gpu().get_stream()>>>(
-      d_inputs_.data<__half*>(), output, size_, num_);
+      d_inputs_.template data<__half*>(), output, size_, num_);
 
   HCTR_LIB_THROW(cudaMemcpyAsync((void*)fprop_output_.data(), (void*)output,
                                  output_tensors_[0].num_bytes(), cudaMemcpyDeviceToDevice,
@@ -220,23 +220,24 @@ void ElementwiseMultiplyLayer<__half>::fprop(bool is_train) {
 template <typename T>
 void ElementwiseMultiplyLayer<T>::bprop() {
   CudaDeviceContext context(get_device_id());
-  T* output = output_tensors_[0].data<T>();
+  T* output = output_tensors_[0].template data<T>();
 
   dim3 blockSize(256, 1, 1);
   dim3 gridSize((size_ + blockSize.x - 1) / blockSize.x, 1, 1);
   elementwise_multiply_dgrad_kernel<<<gridSize, blockSize, 0, get_gpu().get_stream()>>>(
-      output, d_inputs_.data<T*>(), fprop_output_.data<T>(), size_, num_);
+      output, d_inputs_.template data<T*>(), fprop_output_.template data<T>(), size_, num_);
 }
 
 template <>
 void ElementwiseMultiplyLayer<__half>::bprop() {
   CudaDeviceContext context(get_device_id());
-  __half* output = output_tensors_[0].data<__half>();
+  __half* output = output_tensors_[0].template data<__half>();
 
   dim3 blockSize(256, 1, 1);
   dim3 gridSize((size_ / 2 + blockSize.x - 1) / blockSize.x, 1, 1);
   elementwise_multiply_dgrad_kernel<<<gridSize, blockSize, 0, get_gpu().get_stream()>>>(
-      output, d_inputs_.data<__half*>(), fprop_output_.data<__half>(), size_, num_);
+      output, d_inputs_.template data<__half*>(), fprop_output_.template data<__half>(), size_,
+      num_);
 }
 
 template class ElementwiseMultiplyLayer<float>;

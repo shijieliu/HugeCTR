@@ -80,18 +80,19 @@ void WeightedModelBackward::compute(const core23::Tensor& model_comm_buffer,
 
   cudaMemsetAsync(grad_ev_.data(), 0, grad_ev_.num_bytes(), stream);
   DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(model_comm_buffer.data_type().type(), emb_t, [&] {
-    const uint32_t* unique_dst_idx_ptr = unique_dst_idx.data<uint32_t>();
+    const uint32_t* unique_dst_idx_ptr = unique_dst_idx.template data<uint32_t>();
     const emb_t** model_comm_buffer_ptr = static_cast<const emb_t**>(model_comm_buffer.data());
-    const int* local_ev_offset_list_ptr = d_local_ev_size_offset.data<int>();
-    const uint32_t* corrdinate_key_ptr = corrdinate_key.data<uint32_t>();
-    const float* corrdinate_sp_weight_ptr = coordinate_sp_weight.data<float>();
-    const uint32_t* sorted_bucket_id_list_ptr = sorted_bucket_id_list.data<uint32_t>();
-    const uint32_t* coordinate_wgrad_dst_idx_ptr = coordinate_wgrad_dst_idx.data<uint32_t>();
-    auto partial_grad_ev_ptr = partial_grad_ev_.data<float>();
-    auto partial_key_ptr = partial_key_.data<uint32_t>();
-    auto partial_ev_length_ptr = partial_ev_length_.data<int32_t>();
-    auto partial_dst_offset_array_ptr = partial_dst_offset_array_.data<uint32_t>();
-    float* grad_ev_ptr = grad_ev_.data<float>();
+    const int* local_ev_offset_list_ptr = d_local_ev_size_offset.template data<int>();
+    const uint32_t* corrdinate_key_ptr = corrdinate_key.template data<uint32_t>();
+    const float* corrdinate_sp_weight_ptr = coordinate_sp_weight.template data<float>();
+    const uint32_t* sorted_bucket_id_list_ptr = sorted_bucket_id_list.template data<uint32_t>();
+    const uint32_t* coordinate_wgrad_dst_idx_ptr =
+        coordinate_wgrad_dst_idx.template data<uint32_t>();
+    auto partial_grad_ev_ptr = partial_grad_ev_.template data<float>();
+    auto partial_key_ptr = partial_key_.template data<uint32_t>();
+    auto partial_ev_length_ptr = partial_ev_length_.template data<int32_t>();
+    auto partial_dst_offset_array_ptr = partial_dst_offset_array_.template data<uint32_t>();
+    float* grad_ev_ptr = grad_ev_.template data<float>();
 
     auto multi_to_one_desc_first_stage = make_MultiToOne_reduce_weight<emb_t, float>(
         num_model_key, [=] __device__(int i) { return corrdinate_key_ptr[i]; },

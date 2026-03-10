@@ -150,7 +150,7 @@ void FusedReshapeConcatLayer<T>::initialize() {
 
   for (int64_t i = 0; i < num_; i++) {
     // data address
-    uint64_t* to_write = h_inputs_.data<uint64_t>() + i;
+    uint64_t* to_write = h_inputs_.template data<uint64_t>() + i;
     *to_write = reinterpret_cast<uint64_t>(in_tensors_[i].data());
   }
   HCTR_LIB_THROW(cudaMemcpyAsync((void*)vecs_size_.data(), (void*)h_vecs_size_.data(),
@@ -166,28 +166,28 @@ template <typename T>
 void FusedReshapeConcatLayer<T>::fprop(bool is_train) {
   CudaDeviceContext context(get_device_id());
   std::vector<core23::Tensor>& out_tensors = out_tensors_;
-  T* output_item = out_tensors[0].data<T>();
-  T* output_ad = out_tensors[1].data<T>();
+  T* output_item = out_tensors[0].template data<T>();
+  T* output_ad = out_tensors[1].template data<T>();
   dim3 block_size(256, 1, 1);
   size_t n_sms = get_gpu().get_sm_count();
   dim3 grid_size(n_sms * 8, 1, 1);
   fused_reshape_concat_kernel<<<grid_size, block_size, 0, get_gpu().get_stream()>>>(
-      true, d_inputs_.data<T*>(), output_item, output_ad, batch_size_, slot_num_,
-      vecs_size_.data<size_t>(), new_width_, num_);
+      true, d_inputs_.template data<T*>(), output_item, output_ad, batch_size_, slot_num_,
+      vecs_size_.template data<size_t>(), new_width_, num_);
 }
 
 template <typename T>
 void FusedReshapeConcatLayer<T>::bprop() {
   CudaDeviceContext context(get_device_id());
   std::vector<core23::Tensor>& out_tensors = out_tensors_;
-  T* output_item = out_tensors[0].data<T>();
-  T* output_ad = out_tensors[1].data<T>();
+  T* output_item = out_tensors[0].template data<T>();
+  T* output_ad = out_tensors[1].template data<T>();
   dim3 block_size(256, 1, 1);
   size_t n_sms = get_gpu().get_sm_count();
   dim3 grid_size(n_sms * 8, 1, 1);
   fused_reshape_concat_kernel<<<grid_size, block_size, 0, get_gpu().get_stream()>>>(
-      false, d_inputs_.data<T*>(), output_item, output_ad, batch_size_, slot_num_,
-      vecs_size_.data<size_t>(), new_width_, num_);
+      false, d_inputs_.template data<T*>(), output_item, output_ad, batch_size_, slot_num_,
+      vecs_size_.template data<size_t>(), new_width_, num_);
 }
 
 template class FusedReshapeConcatLayer<float>;

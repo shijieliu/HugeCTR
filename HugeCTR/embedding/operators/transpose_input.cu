@@ -108,7 +108,7 @@ void PreprocessInput::compute(const core23::Tensor &key, const core23::Tensor &b
     *feature_major_bucket_range = feature_major_bucket_range_;
     DISPATCH_INTEGRAL_FUNCTION_CORE23(bucket_range.data_type().type(), offset_t, [&] {
       auto stream = core_->get_local_gpu()->get_stream();
-      HCTR_LIB_THROW(cudaMemsetAsync(feature_major_bucket_range_.data<offset_t>(), 0,
+      HCTR_LIB_THROW(cudaMemsetAsync(feature_major_bucket_range_.template data<offset_t>(), 0,
                                      feature_major_bucket_range_.num_bytes(), stream));
 
       {
@@ -116,29 +116,29 @@ void PreprocessInput::compute(const core23::Tensor &key, const core23::Tensor &b
         int grid_size = (bucket_range.num_elements() - 1) / block_size + 1;
         convert_batch_major_to_feature_major_for_bucket_range_kernel<<<grid_size, block_size, 0,
                                                                        stream>>>(
-            bucket_range.data<offset_t>(), num_lookup_, batch_size,
-            feature_major_bucket_range_.data<offset_t>());
+            bucket_range.template data<offset_t>(), num_lookup_, batch_size,
+            feature_major_bucket_range_.template data<offset_t>());
       }
 
       size_t d_temp_scan_storage_nbytes = d_temp_scan_storage_.num_bytes();
       cub::DeviceScan::InclusiveSum(d_temp_scan_storage_.data(), d_temp_scan_storage_nbytes,
-                                    feature_major_bucket_range_.data<offset_t>(),
-                                    feature_major_bucket_range_.data<offset_t>(),
+                                    feature_major_bucket_range_.template data<offset_t>(),
+                                    feature_major_bucket_range_.template data<offset_t>(),
                                     feature_major_bucket_range_.num_elements(), stream);
     });
 
     DISPATCH_INTEGRAL_FUNCTION_CORE23(key.data_type().type(), key_t, [&] {
       DISPATCH_INTEGRAL_FUNCTION_CORE23(bucket_range.data_type().type(), offset_t, [&] {
         auto stream = core_->get_local_gpu()->get_stream();
-        HCTR_LIB_THROW(cudaMemsetAsync(feature_major_key_.data<key_t>(), 0,
+        HCTR_LIB_THROW(cudaMemsetAsync(feature_major_key_.template data<key_t>(), 0,
                                        feature_major_key_.num_bytes(), stream));
 
         constexpr int block_size = 256;
         int grid_size = (bucket_range.num_elements() - 2) / block_size + 1;
         convert_batch_major_to_feature_major_for_key_kernel<<<grid_size, block_size, 0, stream>>>(
-            key.data<key_t>(), bucket_range.data<offset_t>(),
-            feature_major_bucket_range_.data<offset_t>(), num_lookup_, batch_size,
-            feature_major_key_.data<key_t>());
+            key.template data<key_t>(), bucket_range.template data<offset_t>(),
+            feature_major_bucket_range_.template data<offset_t>(), num_lookup_, batch_size,
+            feature_major_key_.template data<key_t>());
       });
     });
   }

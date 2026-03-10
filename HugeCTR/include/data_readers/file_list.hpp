@@ -92,8 +92,7 @@ class FileList {
   std::string get_a_file() {
     unsigned int counter = counter_;
     int current_file_idx = counter % num_of_files_;
-    while (!counter_.compare_exchange_weak(counter, counter + 1))
-      ;
+    while (!counter_.compare_exchange_weak(counter, counter + 1));
 
     return file_vector_[current_file_idx];
   }

@@ -251,9 +251,10 @@ void weighted_sparse_forward_per_gpu(
                 (row_lengths_all_gather_recv_buffer.num_elements() - 1) / block_size + 1;
 
             reorder_row_lengths_kernel<<<grid_size, block_size, 0, stream>>>(
-                row_lengths_all_gather_recv_buffer.data<offset_t>(),
-                row_lengths_all_gather_recv_buffer.num_elements(), bucket_range.data<offset_t>(),
-                batch_size / num_gpus, num_gpus, meta.num_lookup_);
+                row_lengths_all_gather_recv_buffer.template data<offset_t>(),
+                row_lengths_all_gather_recv_buffer.num_elements(),
+                bucket_range.template data<offset_t>(), batch_size / num_gpus, num_gpus,
+                meta.num_lookup_);
 
             size_t temp_bytes = 0;
             cub::DeviceScan::InclusiveSum(nullptr, temp_bytes, (offset_t *)nullptr,
@@ -265,8 +266,8 @@ void weighted_sparse_forward_per_gpu(
                                    .data_type(core23::ScalarType::Char));
 
             cub::DeviceScan::InclusiveSum(
-                temp_scan_storage.data(), temp_bytes, bucket_range.data<offset_t>(),
-                bucket_range.data<offset_t>(), bucket_range.num_elements(), stream);
+                temp_scan_storage.data(), temp_bytes, bucket_range.template data<offset_t>(),
+                bucket_range.template data<offset_t>(), bucket_range.num_elements(), stream);
           });
     };
 
@@ -284,11 +285,11 @@ void weighted_sparse_forward_per_gpu(
                                                    .device(device)
                                                    .data_type(core23::ScalarType::Char));
 
-            cub::DeviceScan::InclusiveSum(temp_scan_storage.data(), temp_bytes,
-                                          row_lengths_all_gather_recv_buffer.data<offset_t>(),
-                                          all_gather_row_offsets.data<offset_t>() + 1,
-                                          row_lengths_all_gather_recv_buffer.num_elements(),
-                                          stream);
+            cub::DeviceScan::InclusiveSum(
+                temp_scan_storage.data(), temp_bytes,
+                row_lengths_all_gather_recv_buffer.template data<offset_t>(),
+                all_gather_row_offsets.template data<offset_t>() + 1,
+                row_lengths_all_gather_recv_buffer.num_elements(), stream);
           });
     };
 
@@ -302,12 +303,12 @@ void weighted_sparse_forward_per_gpu(
                     int grid_size =
                         (row_lengths_all_gather_recv_buffer.num_elements() - 1) / block_size + 1;
                     reorder_key_spweight_kernel<<<grid_size, block_size, 0, stream>>>(
-                        key_all_gather_recv_buffer.data<key_t>(),
-                        all_gather_row_offsets.data<offset_t>(),
-                        sp_weights_all_gather_recv_buffer.data<dtype_t>(),
+                        key_all_gather_recv_buffer.template data<key_t>(),
+                        all_gather_row_offsets.template data<offset_t>(),
+                        sp_weights_all_gather_recv_buffer.template data<dtype_t>(),
                         row_lengths_all_gather_recv_buffer.num_elements(),
-                        bucket_range.data<offset_t>(), keys.data<key_t>(),
-                        reorder_sp_weight.data<dtype_t>(), batch_size / num_gpus, num_gpus,
+                        bucket_range.template data<offset_t>(), keys.template data<key_t>(),
+                        reorder_sp_weight.template data<dtype_t>(), batch_size / num_gpus, num_gpus,
                         meta.num_lookup_);
                   });
             });
@@ -414,28 +415,30 @@ void filter(std::shared_ptr<CoreResourceManager> core,
 
   DISPATCH_INTEGRAL_FUNCTION_CORE23(bucket_range.data_type().type(), offset_t, [&] {
     DISPATCH_INTEGRAL_FUNCTION_CORE23(keys_after_filter.data_type().type(), key_t, [&] {
-      offset_t *bucket_after_filter_ptr = bucket_after_filter.data<offset_t>();
-      const offset_t *bucket_range_ptr = bucket_range.data<offset_t>();
-      char *filterd_ptr = filtered.data<char>();
+      offset_t *bucket_after_filter_ptr = bucket_after_filter.template data<offset_t>();
+      const offset_t *bucket_range_ptr = bucket_range.template data<offset_t>();
+      char *filterd_ptr = filtered.template data<char>();
       count_ratio_filter<<<grid_size, block_size, 0, stream>>>(
           bucket_num, filterd_ptr, bucket_range_ptr, bucket_after_filter_ptr);
-      cub::DeviceScan::InclusiveSum(
-          temp_scan_storage.data(), temp_scan_bytes, bucket_after_filter.data<offset_t>(),
-          bucket_after_filter.data<offset_t>(), bucket_after_filter.num_elements(), stream);
+      cub::DeviceScan::InclusiveSum(temp_scan_storage.data(), temp_scan_bytes,
+                                    bucket_after_filter.template data<offset_t>(),
+                                    bucket_after_filter.template data<offset_t>(),
+                                    bucket_after_filter.num_elements(), stream);
 
-      key_t *keys_ptr = emb_input.keys.data<key_t>();
+      key_t *keys_ptr = emb_input.keys.template data<key_t>();
 
       cub::DeviceSelect::Flagged(temp_select_storage.data(), temp_select_bytes, keys_ptr,
-                                 filterd_ptr, keys_after_filter.data<key_t>(),
-                                 emb_input.num_keys.data<uint64_t>(), emb_input.h_num_keys, stream);
+                                 filterd_ptr, keys_after_filter.template data<key_t>(),
+                                 emb_input.num_keys.template data<uint64_t>(), emb_input.h_num_keys,
+                                 stream);
 
       size_t batch_size = (bucket_num) / meta.num_lookup_;
 
-      cal_lookup_idx<<<1, block_size, 0, stream>>>(meta.num_lookup_ + 1,
-                                                   bucket_after_filter.data<offset_t>(), batch_size,
-                                                   lookup_offset.data<offset_t>(), bucket_num);
+      cal_lookup_idx<<<1, block_size, 0, stream>>>(
+          meta.num_lookup_ + 1, bucket_after_filter.template data<offset_t>(), batch_size,
+          lookup_offset.template data<offset_t>(), bucket_num);
       HCTR_LIB_THROW(cudaStreamSynchronize(stream));
-      emb_input.h_num_keys = static_cast<size_t>(emb_input.num_keys.data<uint64_t>()[0]);
+      emb_input.h_num_keys = static_cast<size_t>(emb_input.num_keys.template data<uint64_t>()[0]);
       emb_input.keys = keys_after_filter;
       emb_input.bucket_range = bucket_after_filter;
     });
@@ -492,9 +495,10 @@ void sparse_forward_per_gpu(std::shared_ptr<CoreResourceManager> core,
                 (row_lengths_all_gather_recv_buffer.num_elements() - 1) / block_size + 1;
 
             reorder_row_lengths_kernel<<<grid_size, block_size, 0, stream>>>(
-                row_lengths_all_gather_recv_buffer.data<offset_t>(),
-                row_lengths_all_gather_recv_buffer.num_elements(), bucket_range.data<offset_t>(),
-                batch_size / num_gpus, num_gpus, meta.num_lookup_);
+                row_lengths_all_gather_recv_buffer.template data<offset_t>(),
+                row_lengths_all_gather_recv_buffer.num_elements(),
+                bucket_range.template data<offset_t>(), batch_size / num_gpus, num_gpus,
+                meta.num_lookup_);
 
             size_t temp_bytes = 0;
             core23::Tensor temp_scan_storage;
@@ -505,8 +509,8 @@ void sparse_forward_per_gpu(std::shared_ptr<CoreResourceManager> core,
                                                    .data_type(core23::ScalarType::Char));
 
             cub::DeviceScan::InclusiveSum(
-                temp_scan_storage.data(), temp_bytes, bucket_range.data<offset_t>(),
-                bucket_range.data<offset_t>(), bucket_range.num_elements(), stream);
+                temp_scan_storage.data(), temp_bytes, bucket_range.template data<offset_t>(),
+                bucket_range.template data<offset_t>(), bucket_range.num_elements(), stream);
           });
     };
 
@@ -521,11 +525,11 @@ void sparse_forward_per_gpu(std::shared_ptr<CoreResourceManager> core,
             temp_scan_storage = core23::Tensor(params.shape({static_cast<int64_t>(temp_bytes)})
                                                    .data_type(core23::ScalarType::Char));
 
-            cub::DeviceScan::InclusiveSum(temp_scan_storage.data(), temp_bytes,
-                                          row_lengths_all_gather_recv_buffer.data<offset_t>(),
-                                          all_gather_row_offsets.data<offset_t>() + 1,
-                                          row_lengths_all_gather_recv_buffer.num_elements(),
-                                          stream);
+            cub::DeviceScan::InclusiveSum(
+                temp_scan_storage.data(), temp_bytes,
+                row_lengths_all_gather_recv_buffer.template data<offset_t>(),
+                all_gather_row_offsets.template data<offset_t>() + 1,
+                row_lengths_all_gather_recv_buffer.num_elements(), stream);
           });
     };
 
@@ -537,9 +541,11 @@ void sparse_forward_per_gpu(std::shared_ptr<CoreResourceManager> core,
               int grid_size =
                   (row_lengths_all_gather_recv_buffer.num_elements() - 1) / block_size + 1;
               reorder_key_kernel<<<grid_size, block_size, 0, stream>>>(
-                  key_all_gather_recv_buffer.data<key_t>(), all_gather_row_offsets.data<offset_t>(),
-                  row_lengths_all_gather_recv_buffer.num_elements(), bucket_range.data<offset_t>(),
-                  keys.data<key_t>(), batch_size / num_gpus, num_gpus, meta.num_lookup_);
+                  key_all_gather_recv_buffer.template data<key_t>(),
+                  all_gather_row_offsets.template data<offset_t>(),
+                  row_lengths_all_gather_recv_buffer.num_elements(),
+                  bucket_range.template data<offset_t>(), keys.template data<key_t>(),
+                  batch_size / num_gpus, num_gpus, meta.num_lookup_);
             });
       });
     };
@@ -923,10 +929,10 @@ void cal_unique_key_table_range(const std::shared_ptr<CoreResourceManager> &core
   HCTR_LIB_THROW(
       cudaMemsetAsync(unique_table_ranges.data(), 0, unique_table_ranges.num_bytes(), stream));
   get_unique_valid_range<<<block_size, grid_size, 0, stream>>>(
-      unique_table_ids.data<int>(), num_unique_key.data<uint64_t>(), table_num,
-      unique_table_ranges.data<uint32_t>());
-  fill_unique_range<<<block_size, grid_size, 0, stream>>>(unique_table_ranges.data<uint32_t>(),
-                                                          table_num);
+      unique_table_ids.template data<int>(), num_unique_key.template data<uint64_t>(), table_num,
+      unique_table_ranges.template data<uint32_t>());
+  fill_unique_range<<<block_size, grid_size, 0, stream>>>(
+      unique_table_ranges.template data<uint32_t>(), table_num);
 }
 
 void sparse_backward_per_gpu(std::shared_ptr<CoreResourceManager> core,

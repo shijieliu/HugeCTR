@@ -48,7 +48,7 @@ core23::Tensor init_tensor_list(const std::vector<core23::Tensor> &tensor_vec, i
 
   std::vector<BuiltInType *> data_vec;
   for (auto &tensor : tensor_vec) {
-    data_vec.push_back(tensor.data<BuiltInType>());
+    data_vec.push_back(tensor.template data<BuiltInType>());
   }
 
   if (stream != 0) {
@@ -68,7 +68,7 @@ static void init_tensor_list(core23::Tensor &tensor_list,
                              cudaStream_t stream = 0) {
   if (tensor_list.device() == Device(DeviceType::CPU)) {
     for (size_t i = 0; i < tensor_vec.size(); ++i) {
-      tensor_list.data<void *>()[i] = tensor_vec[i].data();
+      tensor_list.template data<void *>()[i] = tensor_vec[i].data();
     }
   } else {
     std::vector<void *> data_vec;

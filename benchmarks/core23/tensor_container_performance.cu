@@ -148,7 +148,7 @@ void copy_container_to_tensor(Tensor& dst_tensor,
   int64_t offset = 0;
   for (int64_t t = 0; t < src_container.size(0); t++) {
     const auto src_tensor = src_container[t];
-    copy_sync(dst_tensor.data<T>() + offset, src_tensor.data(), src_tensor.num_bytes(),
+    copy_sync(dst_tensor.template data<T>() + offset, src_tensor.data(), src_tensor.num_bytes(),
               dst_tensor.device(), src_tensor.device());
     offset += src_tensor.num_elements();
   }
@@ -253,14 +253,14 @@ void tensor_container_performance(std::vector<Shape> shapes, bool flatten) {
   auto e_t = std::chrono::steady_clock::now();
   HCTR_LOG_S(INFO, ROOT)
       << std::chrono::duration_cast<std::chrono::nanoseconds>(e_t - b_t).count() / NUM_ITER
-      << " ns to run update_kernel() with "
-      << "TensorContainer(flatten = " << std::boolalpha << flatten << ")" << std::endl;
+      << " ns to run update_kernel() with " << "TensorContainer(flatten = " << std::boolalpha
+      << flatten << ")" << std::endl;
 
   b_t = std::chrono::steady_clock::now();
-  auto weight_ref = weight_ref_tensor.data<float>();
-  auto m_ref = m_ref_tensor.data<T>();
-  auto v_ref = v_ref_tensor.data<T>();
-  auto wgrad_ref = wgrad_ref_tensor.data<T>();
+  auto weight_ref = weight_ref_tensor.template data<float>();
+  auto m_ref = m_ref_tensor.template data<T>();
+  auto v_ref = v_ref_tensor.template data<T>();
+  auto wgrad_ref = wgrad_ref_tensor.template data<T>();
   for (int iter = 0; iter < NUM_ITER; iter++) {
     const size_t len = num_elements;
     constexpr size_t block = 256;

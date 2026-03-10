@@ -87,8 +87,8 @@ void FtrlOptimizer<T>::update() {
   auto len = flat_weight_tensor.size(0);
   const size_t grid_dim = (len - 1) / block_dim + 1;
 
-  float* z = z_tensor_.data<float>();
-  float* n = n_tensor_.data<float>();
+  float* z = z_tensor_.template data<float>();
+  float* n = n_tensor_.template data<float>();
   ftrl_update_kernel<<<grid_dim, block_dim, 0, gpu_resource_->get_stream()>>>(
       len, weight, z, n, wgrad, lr_, beta_, lambda1_, lambda2_ + beta_ / lr_, scaler_);
 }

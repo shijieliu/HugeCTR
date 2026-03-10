@@ -77,15 +77,16 @@ void dp_forward_to_feature_major_output(const core23::Tensor &lookup_res,
       dp_feature_major_bucket_range.data_type().type(), offset_t, [&] {
         DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(output_buffer.data_type().type(), emb_t, [&] {
           using CopyDesc = DPForwardToFeatureMajorOutputMultiToOneDesc<float, emb_t, offset_t>;
-          CopyDesc multi_to_one_desc{batch_size_per_gpu * num_local_lookup,
-                                     batch_size_per_gpu,
-                                     local_lookup_ids.data<int>(),
-                                     dp_feature_major_bucket_range.data<offset_t>(),
-                                     embedding_output_attr.id_to_ev_size.data<int>(),
-                                     embedding_output_attr.id_to_ev_start_indices.data<int>(),
-                                     embedding_output_attr.id_to_combiner.data<char>(),
-                                     (const float **)lookup_res.data(),
-                                     output_buffer.data<emb_t>()};
+          CopyDesc multi_to_one_desc{
+              batch_size_per_gpu * num_local_lookup,
+              batch_size_per_gpu,
+              local_lookup_ids.template data<int>(),
+              dp_feature_major_bucket_range.template data<offset_t>(),
+              embedding_output_attr.id_to_ev_size.template data<int>(),
+              embedding_output_attr.id_to_ev_start_indices.template data<int>(),
+              embedding_output_attr.id_to_combiner.template data<char>(),
+              (const float **)lookup_res.data(),
+              output_buffer.template data<emb_t>()};
           copy_multi_to_one(multi_to_one_desc, embedding_output_attr.max_ev_size, stream);
         });
       });
@@ -105,15 +106,18 @@ void dp_forward_to_batch_major_output(const core23::Tensor &lookup_res,
   DISPATCH_INTEGRAL_FUNCTION_CORE23(
       dp_feature_major_bucket_range.data_type().type(), offset_t, [&] {
         DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(output_buffer.data_type().type(), emb_t, [&] {
-          const int *local_lookup_ids_ptr = local_lookup_ids.data<int>();
-          const offset_t *bucket_range_ptr = dp_feature_major_bucket_range.data<offset_t>();
-          const int *dst_id_to_ev_size_ptr = embedding_output_attr.id_to_ev_size.data<int>();
+          const int *local_lookup_ids_ptr = local_lookup_ids.template data<int>();
+          const offset_t *bucket_range_ptr =
+              dp_feature_major_bucket_range.template data<offset_t>();
+          const int *dst_id_to_ev_size_ptr =
+              embedding_output_attr.id_to_ev_size.template data<int>();
           const int *dst_id_to_ev_start_indices_ptr =
-              embedding_output_attr.id_to_ev_start_indices.data<int>();
-          const char *dst_id_to_combiner_ptr = embedding_output_attr.id_to_combiner.data<char>();
+              embedding_output_attr.id_to_ev_start_indices.template data<int>();
+          const char *dst_id_to_combiner_ptr =
+              embedding_output_attr.id_to_combiner.template data<char>();
 
           const float **lookup_res_ptr = (const float **)lookup_res.data();
-          emb_t *output_buffer_ptr = output_buffer.data<emb_t>();
+          emb_t *output_buffer_ptr = output_buffer.template data<emb_t>();
 
           auto multi_to_one_desc = make_MultiToOne<float, emb_t>(
               batch_size_per_gpu * num_local_lookup,
@@ -174,10 +178,10 @@ void ModelForward::sparse_forward(const core23::Tensor &mp_ev, const core23::Ten
   if (num_lookup > 0) {
     DISPATCH_INTEGRAL_FUNCTION_CORE23(bucket_range.data_type().type(), offset_t, [&] {
       DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(model_comm_buffer.attr.type.type(), emb_t, [&] {
-        const offset_t *bucket_range_ptr = bucket_range.data<offset_t>();
-        const int *id_to_ev_size_ptr = model_comm_buffer.attr.id_to_ev_size.data<int>();
+        const offset_t *bucket_range_ptr = bucket_range.template data<offset_t>();
+        const int *id_to_ev_size_ptr = model_comm_buffer.attr.id_to_ev_size.template data<int>();
         const int *id_to_ev_start_indices_ptr =
-            model_comm_buffer.attr.id_to_ev_start_indices.data<int>();
+            model_comm_buffer.attr.id_to_ev_start_indices.template data<int>();
         const float **mp_ev_ptr = (const float **)mp_ev.data();
         emb_t **model_comm_buffer_ptr = (emb_t **)model_comm_buffer.data.data();
 

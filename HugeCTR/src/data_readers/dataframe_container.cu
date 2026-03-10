@@ -585,7 +585,7 @@ void dump_table_data_to(cudf::table_view& table_view, std::map<int, int>& dense_
       df_ptrs_dst->dense_size_[col] = (value_view.size());
       df_ptrs_dst->dense_size_bytes_[col] = (cudf::size_of(value_view.type()) * value_view.size());
       df_ptrs_dst->dense_offset_ptr_[col] = nullptr;
-      df_ptrs_dst->dense_ptr_[col] = const_cast<float*>(value_view.data<float>());
+      df_ptrs_dst->dense_ptr_[col] = const_cast<float*>(value_view.template data<float>());
 
     } else {
       if (col_view.type().id() != cudf::type_to_id<float>()) {
@@ -595,7 +595,7 @@ void dump_table_data_to(cudf::table_view& table_view, std::map<int, int>& dense_
       df_ptrs_dst->dense_size_[col] = (col_view.size());
       df_ptrs_dst->dense_size_bytes_[col] = (cudf::size_of(col_view.type()) * col_view.size());
       df_ptrs_dst->dense_offset_ptr_[col] = nullptr;
-      df_ptrs_dst->dense_ptr_[col] = const_cast<float*>(col_view.data<float>());
+      df_ptrs_dst->dense_ptr_[col] = const_cast<float*>(col_view.template data<float>());
     }
   }
   for (size_t col = 0; col < total_num_slots_; col++) {
@@ -622,8 +622,9 @@ void dump_table_data_to(cudf::table_view& table_view, std::map<int, int>& dense_
       }
       size_t copy_bytes = cudf::size_of(value_view.type()) * value_view.size();
 
-      df_ptrs_dst->sparse_offset_ptr_[col] = const_cast<int32_t*>(row_offset_view.data<int32_t>());
-      df_ptrs_dst->sparse_ptr_[col] = const_cast<T*>(value_view.data<T>());
+      df_ptrs_dst->sparse_offset_ptr_[col] =
+          const_cast<int32_t*>(row_offset_view.template data<int32_t>());
+      df_ptrs_dst->sparse_ptr_[col] = const_cast<T*>(value_view.template data<T>());
       df_ptrs_dst->sparse_size_[col] = value_view.size();
       df_ptrs_dst->sparse_size_bytes_[col] = copy_bytes;
     } else {
@@ -643,7 +644,7 @@ void dump_table_data_to(cudf::table_view& table_view, std::map<int, int>& dense_
         HCTR_OWN_THROW(Error_t::WrongInput, "Parquet key type error");
       }
       size_t copy_bytes = cudf::size_of(col_view.type()) * col_view.size();
-      df_ptrs_dst->sparse_ptr_[col] = const_cast<T*>(col_view.data<T>());
+      df_ptrs_dst->sparse_ptr_[col] = const_cast<T*>(col_view.template data<T>());
       df_ptrs_dst->sparse_offset_ptr_[col] = nullptr;
       df_ptrs_dst->sparse_size_[col] = col_view.size();
       df_ptrs_dst->sparse_size_bytes_[col] = copy_bytes;

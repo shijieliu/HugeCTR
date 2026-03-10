@@ -39,19 +39,19 @@ void WeightedNetworkBackward::compute(
       DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(
           network_comm_buffer.data_type().type(), dst_emb_t, [&] {
             const offset_t** row_lengths_ptr = static_cast<const offset_t**>(row_lengths.data());
-            const int* network_ids_ptr = network_ids.data<int>();
-            const int* network_gpu_ids_ptr = network_gpu_ids.data<int>();
-            const int* network_offsets_ptr = network_offsets.data<int>();
-            const int* network_dst_lookup_ids_ptr = network_dst_lookup_ids.data<int>();
+            const int* network_ids_ptr = network_ids.template data<int>();
+            const int* network_gpu_ids_ptr = network_gpu_ids.template data<int>();
+            const int* network_offsets_ptr = network_offsets.template data<int>();
+            const int* network_dst_lookup_ids_ptr = network_dst_lookup_ids.template data<int>();
             const int** network_ev_sizes_ptr = static_cast<const int**>(network_ev_sizes.data());
             const int** network_ev_offsets_ptr =
                 static_cast<const int**>(network_ev_offsets.data());
-            const int* d_ev_size_offset_ptr = d_ev_size_offset.data<int>();
+            const int* d_ev_size_offset_ptr = d_ev_size_offset.template data<int>();
             const emb_t** top_grad_ptr = static_cast<const emb_t**>(top_grad.data());
             dst_emb_t** network_comm_buffer_ptr =
                 static_cast<dst_emb_t**>(network_comm_buffer.data());
-            const float* sp_sum_ptr = sp_sum.data<float>();
-            const char* combiner_ptr = d_combiner_list.data<char>();
+            const float* sp_sum_ptr = sp_sum.template data<float>();
+            const char* combiner_ptr = d_combiner_list.template data<char>();
             int num_network_dst_lookup_ids = network_dst_lookup_ids.num_elements();
             int gpu_id = core_->get_global_gpu_id();
 

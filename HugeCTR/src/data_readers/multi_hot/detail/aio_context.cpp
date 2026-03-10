@@ -22,7 +22,7 @@
 
 namespace HugeCTR {
 
-#define round_up(x, y) ((((x) + ((y)-1)) / (y)) * (y))
+#define round_up(x, y) ((((x) + ((y) - 1)) / (y)) * (y))
 
 AIOContext::AIOContext(size_t io_depth) : io_depth_(io_depth), iocb_buffer_(io_depth) {
   tmp_events_.reserve(io_depth);

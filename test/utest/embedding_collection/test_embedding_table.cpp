@@ -128,7 +128,7 @@ void test_embedding_table(int device_id, int table_type) {
 
     std::vector<float*> cpu_emb_vec(cpu_searched_key.size());
 
-    HCTR_LIB_THROW(cudaMemcpy(cpu_emb_vec.data(), emb_vec.data<float>(),
+    HCTR_LIB_THROW(cudaMemcpy(cpu_emb_vec.data(), emb_vec.template data<float>(),
                               cpu_searched_key.size() * sizeof(void*), cudaMemcpyDeviceToHost));
 
     for (size_t idx = 0; idx < cpu_searched_id_space_offset.size() - 1; ++idx) {

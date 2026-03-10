@@ -126,7 +126,7 @@ void AdaGradOptimizer<T>::update() {
   float* weight = flat_weight_tensor.data();
   const T* wgrad = flat_wgrad_tensor.data();
   auto len = flat_weight_tensor.size(0);
-  float* accum = accum_tensor_.data<float>();
+  float* accum = accum_tensor_.template data<float>();
   if (size_t(weight) % 16 == 0 && size_t(wgrad) % 16 == 0 && size_t(accum) % 16 == 0) {
     auto num_sms = gpu_resource_->get_sm_count();
     auto max_thread_per_sm = gpu_resource_->get_max_thread_per_sm();

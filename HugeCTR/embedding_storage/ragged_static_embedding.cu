@@ -506,8 +506,8 @@ RaggedStaticEmbeddingTable::RaggedStaticEmbeddingTable(
         size_t offset = h_emb_table_ev_offset_[i];
         size_t num_elements = h_emb_table_ev_offset_[i + 1] - h_emb_table_ev_offset_[i];
 
-        HugeCTR::UniformGenerator::fill(emb_table_.data<float>() + offset, num_elements, -up_bound,
-                                        up_bound, gpu_resource.get_sm_count(), generator,
+        HugeCTR::UniformGenerator::fill(emb_table_.template data<float>() + offset, num_elements,
+                                        -up_bound, up_bound, gpu_resource.get_sm_count(), generator,
                                         gpu_resource.get_stream());
       };
     } else if (table_params[table_id].init_param.initializer_type ==
@@ -517,8 +517,8 @@ RaggedStaticEmbeddingTable::RaggedStaticEmbeddingTable(
         size_t offset = h_emb_table_ev_offset_[i];
         size_t num_elements = h_emb_table_ev_offset_[i + 1] - h_emb_table_ev_offset_[i];
 
-        HugeCTR::UniformGenerator::fill(emb_table_.data<float>() + offset, num_elements, -up_bound,
-                                        up_bound, gpu_resource.get_sm_count(), generator,
+        HugeCTR::UniformGenerator::fill(emb_table_.template data<float>() + offset, num_elements,
+                                        -up_bound, up_bound, gpu_resource.get_sm_count(), generator,
                                         gpu_resource.get_stream());
       };
     } else if (table_params[table_id].init_param.initializer_type ==
@@ -533,8 +533,8 @@ RaggedStaticEmbeddingTable::RaggedStaticEmbeddingTable(
         HCTR_CHECK_HINT(max_sequence_len * ev_size == static_cast<int>(num_elements),
                         "max_sequent_len * ev_size ", max_sequence_len * ev_size,
                         " should equal to num_elements ", num_elements);
-        HugeCTR::SinusoidalGenerator::fill(emb_table_.data<float>() + offset, num_elements, ev_size,
-                                           max_sequence_len, gpu_resource.get_sm_count(),
+        HugeCTR::SinusoidalGenerator::fill(emb_table_.template data<float>() + offset, num_elements,
+                                           ev_size, max_sequence_len, gpu_resource.get_sm_count(),
                                            gpu_resource.get_stream());
       };
     } else {
@@ -564,11 +564,12 @@ void RaggedStaticEmbeddingTable::lookup(const core23::Tensor &keys, size_t num_k
         constexpr int block_size = 256;
         int grid_size = (num_keys - 1) / block_size + 1;
         ragged_static_embedding_table_lookup_kernel<<<grid_size, block_size, 0, stream>>>(
-            keys.data<key_t>(), num_keys, id_space_offset.data<offset_t>(), num_id_space_offset,
-            id_space_list.data<int>(), table_ids_.data<int>(), table_ids_.num_elements(),
-            num_key_per_table_offset_.data<index_t>(), emb_table_.data<float>(),
-            emb_table_ev_offset_.data<uint64_t>(), local_ev_size_list_.data<int>(),
-            static_cast<float **>(emb_vec.data()));
+            keys.template data<key_t>(), num_keys, id_space_offset.template data<offset_t>(),
+            num_id_space_offset, id_space_list.template data<int>(),
+            table_ids_.template data<int>(), table_ids_.num_elements(),
+            num_key_per_table_offset_.template data<index_t>(), emb_table_.template data<float>(),
+            emb_table_ev_offset_.template data<uint64_t>(),
+            local_ev_size_list_.template data<int>(), static_cast<float **>(emb_vec.data()));
 
         HCTR_LIB_THROW(cudaPeekAtLastError());
       });
@@ -596,11 +597,11 @@ void RaggedStaticEmbeddingTable::update(const core23::Tensor &unique_keys,
       DISPATCH_INTEGRAL_FUNCTION_CORE23(num_key_per_table_offset_.data_type().type(), index_t, [&] {
         DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(wgrad.data_type().type(), wgrad_t, [&] {
           RaggedKeyToIndicesFunc<key_t, index_t> key_to_indices_func{
-              table_ids_.data<int>(),
-              local_ev_size_list_.data<int>(),
+              table_ids_.template data<int>(),
+              local_ev_size_list_.template data<int>(),
               table_ids_.num_elements(),
-              num_key_per_table_offset_.data<index_t>(),
-              emb_table_ev_offset_.data<uint64_t>(),
+              num_key_per_table_offset_.template data<index_t>(),
+              emb_table_ev_offset_.template data<uint64_t>(),
           };
           SGDOptimizer<wgrad_t> optimizer;
 
@@ -614,9 +615,10 @@ void RaggedStaticEmbeddingTable::update(const core23::Tensor &unique_keys,
                             : update_kernel<key_t, index_t, wgrad_t, decltype(optimizer),
                                             decltype(key_to_indices_func)>;
           kernel<<<grid_size, block_size, 0, stream>>>(
-              unique_keys.data<key_t>(), num_unique_keys.data<size_t>(), table_ids.data<int>(),
-              wgrad.data<wgrad_t>(), ev_start_indices.data<uint32_t>(), key_to_indices_func,
-              emb_table_.data<float>(), optimizer, opt_param_.lr, opt_param_.scaler);
+              unique_keys.template data<key_t>(), num_unique_keys.template data<size_t>(),
+              table_ids.template data<int>(), wgrad.template data<wgrad_t>(),
+              ev_start_indices.template data<uint32_t>(), key_to_indices_func,
+              emb_table_.template data<float>(), optimizer, opt_param_.lr, opt_param_.scaler);
         });
       });
     });
@@ -629,14 +631,14 @@ void RaggedStaticEmbeddingTable::update(const core23::Tensor &unique_keys,
           DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(
               adagrad_opt_buffer->opt_accum_tensor.data_type().type(), acc_t, [&] {
                 RaggedKeyToIndicesFunc<key_t, index_t> key_to_indices_func{
-                    table_ids_.data<int>(),
-                    local_ev_size_list_.data<int>(),
+                    table_ids_.template data<int>(),
+                    local_ev_size_list_.template data<int>(),
                     table_ids_.num_elements(),
-                    num_key_per_table_offset_.data<index_t>(),
-                    emb_table_ev_offset_.data<uint64_t>(),
+                    num_key_per_table_offset_.template data<index_t>(),
+                    emb_table_ev_offset_.template data<uint64_t>(),
                 };
                 AdaGradOptimizer<wgrad_t, acc_t> optimizer{
-                    adagrad_opt_buffer->opt_accum_tensor.data<acc_t>(),
+                    adagrad_opt_buffer->opt_accum_tensor.template data<acc_t>(),
                     opt_param_.hyperparams.adagrad.epsilon};
 
                 constexpr int block_size = 256;
@@ -649,10 +651,10 @@ void RaggedStaticEmbeddingTable::update(const core23::Tensor &unique_keys,
                                   : update_kernel<key_t, index_t, wgrad_t, decltype(optimizer),
                                                   decltype(key_to_indices_func)>;
                 kernel<<<grid_size, block_size, 0, stream>>>(
-                    unique_keys.data<key_t>(), num_unique_keys.data<size_t>(),
-                    table_ids.data<int>(), wgrad.data<wgrad_t>(), ev_start_indices.data<uint32_t>(),
-                    key_to_indices_func, emb_table_.data<float>(), optimizer, opt_param_.lr,
-                    opt_param_.scaler);
+                    unique_keys.template data<key_t>(), num_unique_keys.template data<size_t>(),
+                    table_ids.template data<int>(), wgrad.template data<wgrad_t>(),
+                    ev_start_indices.template data<uint32_t>(), key_to_indices_func,
+                    emb_table_.template data<float>(), optimizer, opt_param_.lr, opt_param_.scaler);
               });
         });
       });
@@ -666,16 +668,17 @@ void RaggedStaticEmbeddingTable::update(const core23::Tensor &unique_keys,
           DISPATCH_FLOAT_AND_HALF_FUNCTION_CORE23(
               ftrl_opt_buffer->opt_z_tensor.data_type().type(), opt_t, [&] {
                 RaggedKeyToIndicesFunc<key_t, index_t> key_to_indices_func{
-                    table_ids_.data<int>(),
-                    local_ev_size_list_.data<int>(),
+                    table_ids_.template data<int>(),
+                    local_ev_size_list_.template data<int>(),
                     table_ids_.num_elements(),
-                    num_key_per_table_offset_.data<index_t>(),
-                    emb_table_ev_offset_.data<uint64_t>(),
+                    num_key_per_table_offset_.template data<index_t>(),
+                    emb_table_ev_offset_.template data<uint64_t>(),
                 };
                 FtrlOptimizer<wgrad_t, opt_t> optimizer{
-                    ftrl_opt_buffer->opt_z_tensor.data<opt_t>(),
-                    ftrl_opt_buffer->opt_n_tensor.data<opt_t>(), opt_param_.hyperparams.ftrl.beta,
-                    opt_param_.hyperparams.ftrl.lambda1, opt_param_.hyperparams.ftrl.lambda2};
+                    ftrl_opt_buffer->opt_z_tensor.template data<opt_t>(),
+                    ftrl_opt_buffer->opt_n_tensor.template data<opt_t>(),
+                    opt_param_.hyperparams.ftrl.beta, opt_param_.hyperparams.ftrl.lambda1,
+                    opt_param_.hyperparams.ftrl.lambda2};
 
                 constexpr int block_size = 256;
                 const auto &kernel_param = core_->get_kernel_param();
@@ -687,10 +690,10 @@ void RaggedStaticEmbeddingTable::update(const core23::Tensor &unique_keys,
                                   : update_kernel<key_t, index_t, wgrad_t, decltype(optimizer),
                                                   decltype(key_to_indices_func)>;
                 kernel<<<grid_size, block_size, 0, stream>>>(
-                    unique_keys.data<key_t>(), num_unique_keys.data<size_t>(),
-                    table_ids.data<int>(), wgrad.data<wgrad_t>(), ev_start_indices.data<uint32_t>(),
-                    key_to_indices_func, emb_table_.data<float>(), optimizer, opt_param_.lr,
-                    opt_param_.scaler);
+                    unique_keys.template data<key_t>(), num_unique_keys.template data<size_t>(),
+                    table_ids.template data<int>(), wgrad.template data<wgrad_t>(),
+                    ev_start_indices.template data<uint32_t>(), key_to_indices_func,
+                    emb_table_.template data<float>(), optimizer, opt_param_.lr, opt_param_.scaler);
               });
         });
       });

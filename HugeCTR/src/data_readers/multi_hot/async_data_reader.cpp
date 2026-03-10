@@ -141,7 +141,7 @@ AsyncDataReader<SparseType>::AsyncDataReader(
         core23::Device(core23::DeviceType::GPU, static_cast<int8_t>(gpu_id))));
 
     dense_tensors_.emplace_back(core23::Tensor::bind(
-        one_tensor.data<LabelType>() + batch_size_per_dev_ * label_dim,
+        one_tensor.template data<LabelType>() + batch_size_per_dev_ * label_dim,
         {static_cast<int64_t>(batch_size_per_dev_), static_cast<int64_t>(dense_dim_align8)},
         mixed_precision_ ? core23::ScalarType::Half : core23::ScalarType::Float,
         core23::Device(core23::DeviceType::GPU, static_cast<int8_t>(gpu_id))));
@@ -193,7 +193,7 @@ void AsyncDataReader<SparseType>::init_batch_tensors(size_t num_inflight) {
           core23::Device(core23::DeviceType::GPU, static_cast<int8_t>(gpu_id))));
 
       batch_tensors.dense_tensors.emplace_back(core23::Tensor::bind(
-          one_tensor.data<LabelType>() + batch_size_per_dev_ * label_dim_,
+          one_tensor.template data<LabelType>() + batch_size_per_dev_ * label_dim_,
           {static_cast<int64_t>(batch_size_per_dev_), static_cast<int64_t>(dense_dim_)},
           mixed_precision_ ? core23::ScalarType::Half : core23::ScalarType::Float,
           core23::Device(core23::DeviceType::GPU, static_cast<int8_t>(gpu_id))));

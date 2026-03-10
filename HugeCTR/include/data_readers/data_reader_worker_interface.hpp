@@ -24,9 +24,9 @@ namespace HugeCTR {
 
 class IDataReaderWorker {
  public:
-  virtual void read_a_batch(){};
-  virtual void skip_read(){};
-  virtual void do_h2d(){};
+  virtual void read_a_batch() {};
+  virtual void skip_read() {};
+  virtual void do_h2d() {};
   virtual ~IDataReaderWorker(){};
   virtual void set_source(std::shared_ptr<Source> source) {
     if (!is_eof_) {

@@ -54,8 +54,8 @@ struct PartitionedData {
   template <typename KeyType, typename BucketRangeType>
   PartitionedDataView<KeyType, BucketRangeType> view() {
     return PartitionedDataView<KeyType, BucketRangeType>{
-        partitioned_keys.data<KeyType>(), feature_ids.data<int>(),
-        d_num_key_per_partition.data<BucketRangeType>(), max_num_key_per_partition};
+        partitioned_keys.template data<KeyType>(), feature_ids.template data<int>(),
+        d_num_key_per_partition.template data<BucketRangeType>(), max_num_key_per_partition};
   }
 };
 

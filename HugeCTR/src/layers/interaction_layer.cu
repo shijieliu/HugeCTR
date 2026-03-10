@@ -41,9 +41,7 @@ struct Log2<1> {
   static constexpr uint value = 0;
 };
 
-struct __align__(8) half4 {
-  half2 vals[2];
-};
+struct __align__(8) half4 { half2 vals[2]; };
 template <uint WARPS_PER_BLOCK, uint THREADBLOCK_SIZE, uint M_BLOCKS, uint K_BLOCKS,
           uint SMEM_STRIDE, uint SMEM_STRIDE_ACC, uint THREADS_IN_WARP, uint THREADS_IN_WARP_LOG_2,
           uint TILE_DIM, uint TILE_DIM_LOG_2>
@@ -1048,9 +1046,9 @@ void InteractionLayer<T>::fprop_generic(bool is_train) {
   CudaDeviceContext context(get_device_id());
 
   // phase 0: concat
-  auto *concat = intermediate_tensors_[0].data<T>();
-  auto *in_mlp = input_tensors_[0].data<T>();
-  auto *in_emb = input_tensors_[1].data<T>();
+  auto *concat = intermediate_tensors_[0].template data<T>();
+  auto *in_mlp = input_tensors_[0].template data<T>();
+  auto *in_emb = input_tensors_[1].template data<T>();
   const int h = intermediate_tensors_[0].size(0);
   const int out_w = intermediate_tensors_[0].size(1);
   const int in_w = input_tensors_[0].size(1);
@@ -1063,7 +1061,7 @@ void InteractionLayer<T>::fprop_generic(bool is_train) {
                                                               out_w, in_w, n_emb);
   // phase 1: matmul
   const int batch_count = h;
-  auto *mat = intermediate_tensors_[1].data<T>();
+  auto *mat = intermediate_tensors_[1].template data<T>();
   const int m = n_ins;
   const int n = n_ins;
   const int k = in_w;
@@ -1093,8 +1091,8 @@ void InteractionLayer<T>::fprop_generic(bool is_train) {
                                             batch_count, compute_type, algo));
 
   // phase 2: gather & concat
-  T *in0 = input_tensors_[0].data<T>();
-  T *gather = output_tensors_[0].data<T>();
+  T *in0 = input_tensors_[0].template data<T>();
+  T *gather = output_tensors_[0].template data<T>();
 
   dim3 grid1(get_gpu().get_sm_count() * 8, 1, 1);
   dim3 block1(16, 16, 1);
@@ -1116,9 +1114,9 @@ template <>
 void InteractionLayer<__half>::fprop(bool is_train) {
   CudaDeviceContext context(get_device_id());
 
-  __half *in_mlp = input_tensors_[0].data<__half>();
-  __half *in_emb = input_tensors_[1].data<__half>();
-  __half *output = output_tensors_[0].data<__half>();
+  __half *in_mlp = input_tensors_[0].template data<__half>();
+  __half *in_emb = input_tensors_[1].template data<__half>();
+  __half *output = output_tensors_[0].template data<__half>();
   const int h = input_tensors_[0].size(0);
   const int in_w = input_tensors_[0].size(1);
   const int n_emb = input_tensors_[1].size(1);
@@ -1136,15 +1134,15 @@ void InteractionLayer<T>::bprop_generic() {
   CudaDeviceContext context(get_device_id());
 
   // phase 0:
-  T *gather = output_tensors_[0].data<T>();
-  T *in0 = input_tensors_[0].data<T>();
-  T *mat = intermediate_tensors_[1].data<T>();
+  T *gather = output_tensors_[0].template data<T>();
+  T *in0 = input_tensors_[0].template data<T>();
+  T *mat = intermediate_tensors_[1].template data<T>();
   const int h = intermediate_tensors_[0].size(0);
   const int n_ins = 1 + input_tensors_[1].size(1);
   const int in_w = input_tensors_[0].size(1);
-  T *mat_dst = intermediate_tensors_[1].data<T>();
+  T *mat_dst = intermediate_tensors_[1].template data<T>();
   if (n_ins >= n_ins_knob) {
-    mat_dst = intermediate_tensors_[3].data<T>();
+    mat_dst = intermediate_tensors_[3].template data<T>();
   }
   dim3 grid1(get_gpu().get_sm_count() * 8, 1, 1);
   dim3 block1(16, 16, 1);
@@ -1159,8 +1157,8 @@ void InteractionLayer<T>::bprop_generic() {
 
   // phase 1:
   const int batch_count = h;
-  T *concat = intermediate_tensors_[0].data<T>();
-  T *concat_tmp = intermediate_tensors_[2].data<T>();
+  T *concat = intermediate_tensors_[0].template data<T>();
+  T *concat_tmp = intermediate_tensors_[2].template data<T>();
   const int m = n_ins;
   const int n = in_w;
   const int k = n_ins;
@@ -1203,8 +1201,8 @@ void InteractionLayer<T>::bprop_generic() {
                                             b_type, k, stride_b, &beta, concat_tmp, c_type, n,
                                             stride_c, batch_count, compute_type, algo));
 
-  T *in_mlp = input_tensors_[0].data<T>();
-  T *in_emb = input_tensors_[1].data<T>();
+  T *in_mlp = input_tensors_[0].template data<T>();
+  T *in_emb = input_tensors_[1].template data<T>();
   const int out_w = intermediate_tensors_[0].size(1);
   const int n_emb = input_tensors_[1].size(1);
 
@@ -1221,10 +1219,10 @@ template <>
 void InteractionLayer<__half>::bprop() {
   CudaDeviceContext context(get_device_id());
 
-  __half *up_grad = output_tensors_[0].data<__half>();
-  if (separate_Y_and_dY_) up_grad = output_tensors_[1].data<__half>();
-  __half *mlp_grad = input_tensors_[0].data<__half>();
-  __half *emb_grad = input_tensors_[1].data<__half>();
+  __half *up_grad = output_tensors_[0].template data<__half>();
+  if (separate_Y_and_dY_) up_grad = output_tensors_[1].template data<__half>();
+  __half *mlp_grad = input_tensors_[0].template data<__half>();
+  __half *emb_grad = input_tensors_[1].template data<__half>();
   const int h = input_tensors_[0].size(0);
   const int n_emb = input_tensors_[1].size(1);
   const int n_ins = 1 + n_emb;

@@ -160,8 +160,8 @@ template <typename T>
 void ReduceMeanLayer<T>::fprop(bool is_train) {
   CudaDeviceContext context(get_device_id());
 
-  auto* input = input_tensors_[0].data<T>();
-  auto* output = output_tensors_[0].data<T>();
+  auto* input = input_tensors_[0].template data<T>();
+  auto* output = output_tensors_[0].template data<T>();
   auto in_shape = input_tensors_[0].shape();
   auto out_shape = output_tensors_[0].shape();
 
@@ -186,8 +186,8 @@ template <typename T>
 void ReduceMeanLayer<T>::bprop() {
   CudaDeviceContext context(get_device_id());
 
-  auto* input = input_tensors_[0].data<T>();
-  auto* output = output_tensors_[0].data<T>();
+  auto* input = input_tensors_[0].template data<T>();
+  auto* output = output_tensors_[0].template data<T>();
   auto in_shape = input_tensors_[0].shape();
 
   auto size = in_shape.size();

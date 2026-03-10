@@ -67,9 +67,9 @@ void SparseDPDataDistributionOp::distribute(const DataDistributionInput& input,
   DISPATCH_INTEGRAL_FUNCTION_CORE23(ebc_param_.offset_type.type(), BucketRangeType, [&] {
     BucketRangeType num_keys = 0;
     int num_buckets = output.bucket_range.num_elements();
-    HCTR_LIB_THROW(cudaMemcpyAsync(&num_keys,
-                                   output.bucket_range.data<BucketRangeType>() + num_buckets - 1,
-                                   sizeof(BucketRangeType), cudaMemcpyDeviceToHost, stream));
+    HCTR_LIB_THROW(cudaMemcpyAsync(
+        &num_keys, output.bucket_range.template data<BucketRangeType>() + num_buckets - 1,
+        sizeof(BucketRangeType), cudaMemcpyDeviceToHost, stream));
     HCTR_LIB_THROW(cudaStreamSynchronize(stream));
     output.h_num_keys = num_keys;
   });
@@ -115,7 +115,8 @@ SparseMPDataDistributionOp::MPTempStorage::MPTempStorage(
     size_t temp_bytes = 0;
     DISPATCH_INTEGRAL_FUNCTION_CORE23(offset_type.type(), BucketRangeType, [&] {
       cub::DeviceScan::InclusiveSum(nullptr, temp_bytes, (BucketRangeType*)nullptr,
-                                    (BucketRangeType*)nullptr, static_cast<int64_t>(batch_size * max_local_buckets + 1));
+                                    (BucketRangeType*)nullptr,
+                                    static_cast<int64_t>(batch_size * max_local_buckets + 1));
     });
     this->temp_scan_storage = core23::Tensor(
         params.shape({static_cast<int64_t>(temp_bytes)}).data_type(core23::ScalarType::Char));
@@ -249,10 +250,10 @@ void SparseMPDataDistributionOp::all2all_keys_per_bucket(embedding::EmbeddingInp
       size_t send_num_buckets =
           per_gpu_lookup_range[(peer + 1) * ebc_param_.num_lookup] - start_range;
 
-      HCTR_LIB_THROW(ncclSend(send_tensor.data<BucketRangeType>() + start_range, send_num_buckets,
-                              nccl_type, peer, core_->get_nccl(), stream));
-      HCTR_LIB_THROW(ncclRecv(recv_tensor.data<BucketRangeType>() + recv_offset, recv_num_buckets,
-                              nccl_type, peer, core_->get_nccl(), stream));
+      HCTR_LIB_THROW(ncclSend(send_tensor.template data<BucketRangeType>() + start_range,
+                              send_num_buckets, nccl_type, peer, core_->get_nccl(), stream));
+      HCTR_LIB_THROW(ncclRecv(recv_tensor.template data<BucketRangeType>() + recv_offset,
+                              recv_num_buckets, nccl_type, peer, core_->get_nccl(), stream));
 
       recv_offset += recv_num_buckets;
     }
@@ -275,10 +276,10 @@ void SparseMPDataDistributionOp::all2all_keys(embedding::EmbeddingInput& output,
   DISPATCH_INTEGRAL_FUNCTION_CORE23(ebc_param_.key_type.type(), KeyType, [&] {
     size_t temp_bytes = sparse_temp_storage_.temp_sort_storage.num_bytes();
     void* temp_ptr = sparse_temp_storage_.temp_sort_storage.data();
-    auto keys_in = label_and_count_keys_output_.flat_keys.data<KeyType>();
-    auto keys_out = sparse_temp_storage_.sorted_local_keys.data<KeyType>();
-    auto labels_in = label_and_count_keys_output_.local_labels.data<uint32_t>();
-    auto labels_out = sparse_temp_storage_.sorted_local_labels.data<uint32_t>();
+    auto keys_in = label_and_count_keys_output_.flat_keys.template data<KeyType>();
+    auto keys_out = sparse_temp_storage_.sorted_local_keys.template data<KeyType>();
+    auto labels_in = label_and_count_keys_output_.local_labels.template data<uint32_t>();
+    auto labels_out = sparse_temp_storage_.sorted_local_labels.template data<uint32_t>();
 
     // ATTENTION: cub radix sort requires NumItemT to be consistent
     int sort_end_bit = (int)log2(num_global_gpus_) + 1;
@@ -320,11 +321,11 @@ void SparseMPDataDistributionOp::all2all_keys(embedding::EmbeddingInput& output,
         //        core->get_global_gpu_id(),
         //               (int)peer, (int)send_num_keys, (int)recv_num_keys);
         if (send_num_keys > 0) {
-          HCTR_LIB_THROW(ncclSend(send_tensor.data<KeyType>() + send_offset, send_num_keys,
+          HCTR_LIB_THROW(ncclSend(send_tensor.template data<KeyType>() + send_offset, send_num_keys,
                                   nccl_type, peer, core_->get_nccl(), stream));
         }
         if (recv_num_keys > 0) {
-          HCTR_LIB_THROW(ncclRecv(recv_tensor.data<KeyType>() + recv_offset, recv_num_keys,
+          HCTR_LIB_THROW(ncclRecv(recv_tensor.template data<KeyType>() + recv_offset, recv_num_keys,
                                   nccl_type, peer, core_->get_nccl(), stream));
         }
         send_offset += send_num_keys;
@@ -347,10 +348,11 @@ void SparseMPDataDistributionOp::filter_after_all2all(embedding::EmbeddingInput&
     auto bucket_range_gpu_major = sparse_temp_storage_.bucket_range_gpu_major;
 
     // computes in-place!
-    HCTR_LIB_THROW(cudaMemsetAsync(bucket_range_gpu_major.data<BucketRangeType>(), 0,
+    HCTR_LIB_THROW(cudaMemsetAsync(bucket_range_gpu_major.template data<BucketRangeType>(), 0,
                                    sizeof(BucketRangeType), stream));
-    cub::DeviceScan::InclusiveSum(temp_ptr, temp_bytes, k_per_b_gpu_major.data<BucketRangeType>(),
-                                  bucket_range_gpu_major.data<BucketRangeType>() + 1,
+    cub::DeviceScan::InclusiveSum(temp_ptr, temp_bytes,
+                                  k_per_b_gpu_major.template data<BucketRangeType>(),
+                                  bucket_range_gpu_major.template data<BucketRangeType>() + 1,
                                   k_per_b_gpu_major.num_elements(), stream);
   });
 
@@ -365,10 +367,11 @@ void SparseMPDataDistributionOp::filter_after_all2all(embedding::EmbeddingInput&
     void* temp_ptr = sparse_temp_storage_.temp_scan_storage.data();
     auto k_per_b_feat_major = sparse_temp_storage_.k_per_b_feat_major;
 
-    HCTR_LIB_THROW(cudaMemsetAsync(output.bucket_range.data<BucketRangeType>(), 0,
+    HCTR_LIB_THROW(cudaMemsetAsync(output.bucket_range.template data<BucketRangeType>(), 0,
                                    sizeof(BucketRangeType), stream));
-    cub::DeviceScan::InclusiveSum(temp_ptr, temp_bytes, k_per_b_feat_major.data<BucketRangeType>(),
-                                  output.bucket_range.data<BucketRangeType>() + 1,
+    cub::DeviceScan::InclusiveSum(temp_ptr, temp_bytes,
+                                  k_per_b_feat_major.template data<BucketRangeType>(),
+                                  output.bucket_range.template data<BucketRangeType>() + 1,
                                   k_per_b_feat_major.num_elements(), stream);
   });
 

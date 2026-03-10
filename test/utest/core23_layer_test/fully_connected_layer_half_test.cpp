@@ -105,12 +105,12 @@ static void fully_connected_layer_test(int64_t m, int64_t n, int64_t k) {
       cudaMemset(weights_grad_view.data(), 0.0, sizeof(__half) * weights_grad_view.size(0)));
 
   // TODO: result check
-  __half *d_kernel = weights_container[0].data<__half>();
-  __half *d_bias = weights_container[1].data<__half>();
-  __half *d_kernel_grad = weights_grad_container[0].data<__half>();
-  __half *d_bias_grad = weights_grad_container[1].data<__half>();
-  __half *d_bottom = bottom_tensor.data<__half>();
-  __half *d_top = top_tensor.data<__half>();
+  __half *d_kernel = weights_container[0].template data<__half>();
+  __half *d_bias = weights_container[1].template data<__half>();
+  __half *d_kernel_grad = weights_grad_container[0].template data<__half>();
+  __half *d_bias_grad = weights_grad_container[1].template data<__half>();
+  __half *d_bottom = bottom_tensor.template data<__half>();
+  __half *d_top = top_tensor.template data<__half>();
 
   std::unique_ptr<__half[]> h_kernel(new __half[test::align_to_even(k * n)]);
   std::unique_ptr<__half[]> h_kernel_grad(new __half[k * n]);

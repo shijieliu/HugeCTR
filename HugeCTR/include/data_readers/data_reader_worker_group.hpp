@@ -177,8 +177,8 @@ class DataReaderWorkerGroup {
       data_reader_thread.join();
     }
   }
-  virtual void pre_set_source(){};
-  virtual void post_set_source(){};
+  virtual void pre_set_source() {};
+  virtual void post_set_source() {};
   virtual void set_source(SourceType_t source_type, const std::string& file_name, bool repeat,
                           const DataSourceParams& data_source_params,
                           bool strict_order_of_batches = false) {

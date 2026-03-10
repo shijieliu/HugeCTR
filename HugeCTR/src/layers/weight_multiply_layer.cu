@@ -250,7 +250,7 @@ void WeightMultiplyLayer<T>::bprop() {
 
   const T* weight = this->get_weight(0).template data<T>();
   T* wgrad = this->get_wgrad(0).template data<T>();
-  T* wgrad_tmp_trans = wgrad_tmp_trans_.data<T>();
+  T* wgrad_tmp_trans = wgrad_tmp_trans_.template data<T>();
   T* input = this->input_tensors_[0].template data<T>();
   T* output = this->output_tensors_[0].template data<T>();
   weight_multiply_wgrad(output, input, wgrad, wgrad_tmp_trans, batch_size_, slot_num_,

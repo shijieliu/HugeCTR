@@ -82,7 +82,7 @@ class SplitBatchFixture : public ::testing::Test {
         core23::TensorParams().shape({sparse_dim}).data_type(core23::ScalarType::Int32));
 
     for (int64_t i = 0; i < sparse_dim; ++i) {
-      SparseType* ptr = sparse_tensors[i].data<SparseType>();
+      SparseType* ptr = sparse_tensors[i].template data<SparseType>();
       HCTR_LIB_THROW(cudaMemcpy(reinterpret_cast<SparseType**>(sparse_tensor_ptrs.data()) + i, &ptr,
                                 sizeof(SparseType*), cudaMemcpyHostToDevice));
     }

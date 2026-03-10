@@ -109,7 +109,7 @@ void SliceLayer<T>::fprop(bool is_train) {
 
   int block_size = 256;
   int n_blocks = get_gpu().get_sm_count() * 4;
-  T* in = input_tensors_[0].data<T>();
+  T* in = input_tensors_[0].template data<T>();
   auto in_shape = input_tensors_[0].shape();
   auto dims = in_shape.dims();
   int height = 1;
@@ -121,7 +121,7 @@ void SliceLayer<T>::fprop(bool is_train) {
   int grid_size = std::min(in_dim.x, n_blocks);
   for (std::size_t i = 0; i < output_tensors_.size(); i++) {
     core23::Tensor& output_tensor = output_tensors_[i];
-    T* out = output_tensor.data<T>();
+    T* out = output_tensor.template data<T>();
     int2 slice = {slices_start_[i], static_cast<int>(output_tensor.size(dims - 1))};
 
     slice_fwd_kernel<<<grid_size, block_size, 0, stream>>>(out, in, in_dim, slice);
@@ -135,7 +135,7 @@ void SliceLayer<T>::bprop() {
 
   int block_size = 256;
   int n_blocks = get_gpu().get_sm_count() * 4;
-  T* in = input_tensors_[0].data<T>();
+  T* in = input_tensors_[0].template data<T>();
   auto in_shape = input_tensors_[0].shape();
   auto dims = in_shape.dims();
   int height = 1;
@@ -148,7 +148,7 @@ void SliceLayer<T>::bprop() {
   initialize_array<<<n_blocks, block_size, 0, stream>>>(in, in_dim.x * in_dim.y, T(0));
   for (std::size_t i = 0; i < output_tensors_.size(); i++) {
     core23::Tensor& output_tensor = output_tensors_[i];
-    T* out = output_tensor.data<T>();
+    T* out = output_tensor.template data<T>();
     int2 slice = {slices_start_[i], static_cast<int>(output_tensor.size(dims - 1))};
 
     slice_bwd_kernel<<<grid_size, block_size, 0, stream>>>(out, in, in_dim, slice);
