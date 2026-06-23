@@ -2,6 +2,7 @@
 
 srun --ntasks=1 --container-image="${CONT}" --container-mounts="${MOUNTS}" bash -cex " \
     export PYTHONPATH=$PYTHONPATH:/usr/local/hugectr/lib && \
+    python3 /workdir/test/sample_utils_test/convert_pd_validation_test.py && \
     cd /workdir/samples/din && \
     mkdir -p din_data && cd utils && \
     bash preprocess.sh && \
